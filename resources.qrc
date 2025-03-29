@@ -3,5 +3,7 @@
         <file alias="logo.png">img/DbStressTest.png</file>
         <file alias="about.png">img/about.png</file>
         <file alias="connection.png">img/connection.png</file>
+        <file alias="open.png">img/cfg-open.png</file>
+        <file alias="save.png">img/cfg-save.png</file>
     </qresource>
 </RCC>

@@ -1,9 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include "helpers/settingshelper.h"
+#include "serializers/configserializer.h"
+#include "db/dbmanager.h"
 #include "helpers/xlsxhelper.h"
-#include "connectionparameters.h"
+
 #include "dialogs/sqlconnectiondialog.h"
 #include "objects/querystats.h"
 #include "delegates/numericdelegate.h"
@@ -19,7 +20,18 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    QTimer::singleShot(0, this, &MainWindow::setupForm);
+}
 
+MainWindow::~MainWindow()
+{
+    // SettingsHelper::saveSettings(m_queryModel.queryList());
+    delete ui;
+    qDeleteAll(m_workers);
+}
+
+void MainWindow::setupForm()
+{
     m_workerCount = QThread::idealThreadCount();
     ui->workerCount->setValue(m_workerCount);
     clearStatistics();
@@ -31,15 +43,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tableView->verticalHeader()->hide();
     ui->tableView->setAlternatingRowColors(true);
     const QList<int> numericColumns{
-        {
-            static_cast<int>(QueryStatsModel::ModelColumn::TotalExecTimeMs),
-            static_cast<int>(QueryStatsModel::ModelColumn::TotalFetchTimeMs),
-            static_cast<int>(QueryStatsModel::ModelColumn::AverageExecTimeMs),
-            static_cast<int>(QueryStatsModel::ModelColumn::AverageFetchTimeMs),
-            static_cast<int>(QueryStatsModel::ModelColumn::RowCount),
-            static_cast<int>(QueryStatsModel::ModelColumn::AffectedRows),
-            static_cast<int>(QueryStatsModel::ModelColumn::Weight),
-        }
+      {
+        static_cast<int>(QueryStatsModel::ModelColumn::TotalExecTimeMs),
+        static_cast<int>(QueryStatsModel::ModelColumn::TotalFetchTimeMs),
+        static_cast<int>(QueryStatsModel::ModelColumn::AverageExecTimeMs),
+        static_cast<int>(QueryStatsModel::ModelColumn::AverageFetchTimeMs),
+        static_cast<int>(QueryStatsModel::ModelColumn::RowCount),
+        static_cast<int>(QueryStatsModel::ModelColumn::AffectedRows),
+        static_cast<int>(QueryStatsModel::ModelColumn::Weight),
+      }
     };
     for (auto column : numericColumns)
         ui->tableView->setItemDelegateForColumn(column, new NumericDelegate());
@@ -51,6 +63,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     prepareQueries();
 
+    connect(ui->actionCfgOpen, &QAction::triggered, this, &MainWindow::loadConfiguration);
+    connect(ui->actionCfgSave, &QAction::triggered, this, &MainWindow::saveConfiguration);
     connect(ui->actionChangeConnection, &QAction::triggered, this, &MainWindow::changeConnection);
     connect(ui->actionExit, &QAction::triggered, qApp, &QApplication::quit);
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::about);
@@ -64,11 +78,39 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->buttonCheckAll->setChecked(true);
 }
 
-MainWindow::~MainWindow()
+void MainWindow::loadConfiguration()
 {
-    SettingsHelper::saveSettings(m_queryModel.queryList());
-    delete ui;
-    qDeleteAll(m_workers);
+    const auto fileName = QFileDialog::getOpenFileName(this,
+                                                       tr("Open File"),
+                                                       QString(),
+                                                       tr("DbStressTest configuration (*.json *.cfg)"));
+    if (fileName.isEmpty())
+        return;
+    const auto cfg = st::ConfigSerializer::openConfiguration(fileName);
+    if (!cfg.isValid())
+    {
+        QMessageBox msg;
+        msg.setIcon(QMessageBox::Critical);
+        msg.setText(tr("La configurazione letta non è valida."));
+        msg.setStandardButtons(QMessageBox::Ok);
+        msg.exec();
+        return;
+    }
+    setConfiguration(cfg);
+}
+
+void MainWindow::saveConfiguration()
+{
+
+}
+
+void MainWindow::setConfiguration(st::Configuration cfg)
+{
+    m_cfg = cfg;
+    st::DBManager::setDb(m_cfg.db());
+    ui->hostname->setText(m_cfg.db().specs.hostname);
+    ui->databaseName->setText(m_cfg.db().specs.databaseName);
+    prepareQueries();
 }
 
 void MainWindow::changeConnection()
@@ -89,8 +131,6 @@ void MainWindow::changeConnection()
     SqlConnectionDialog d;
     if (d.exec() == QDialog::Rejected)
         return;
-    ui->hostName->setText(ConnectionParameters::hostName());
-    ui->databaseName->setText(ConnectionParameters::databaseName());
 }
 
 void MainWindow::start()
@@ -271,8 +311,9 @@ void MainWindow::extractStatsToXlsx()
     XlsxHelper::dumpModelToXlsxWithForegroundRole(xlsx, m_queryModel);
 
     int row{m_queryModel.rowCount() + 2};
-    xlsx.write(++row, 1, tr("Server: ").append(ConnectionParameters::hostName()));
-    xlsx.write(++row, 1, tr("Database: ").append(ConnectionParameters::databaseName()));
+    xlsx.write(++row, 1, tr("Configurazione: ").append(m_cfg.db().name));
+    xlsx.write(++row, 1, tr("Server: ").append(m_cfg.db().specs.hostname));
+    xlsx.write(++row, 1, tr("Database: ").append(m_cfg.db().specs.databaseName));
     xlsx.write(++row, 1, tr("Numero worker: %1").arg(m_workerCount));
     xlsx.write(++row, 1, tr("Numero query eseguite con successo: %1").arg(m_succeeded));
     xlsx.write(++row, 1, tr("Numero query eseguite con errore: %1").arg(m_failed));
@@ -310,8 +351,8 @@ void MainWindow::checkUncheckAllQueries(bool checked)
 
 void MainWindow::clearStatistics()
 {
-    ui->hostName->setText(ConnectionParameters::hostName());
-    ui->databaseName->setText(ConnectionParameters::databaseName());
+    ui->hostname->setText(m_cfg.db().specs.hostname);
+    ui->databaseName->setText(m_cfg.db().specs.databaseName);
     ui->duration->setText(QTime(0, 0).toString("hh:mm:ss.zzz"));
     ui->workersRunning->setText(QStringLiteral("0"));
     ui->execRunning->setText(QStringLiteral("0"));
@@ -345,8 +386,8 @@ void MainWindow::addWorker()
 void MainWindow::prepareQueries()
 {
     m_queryModel.clear();
-    for (const auto &query : SettingsHelper::readQueries())
-        m_queryModel.appendQuery(query);
+    for (const auto &query : m_cfg.queries())
+        m_queryModel.appendQuery(Query(query));
 
     ui->tableView->resizeColumnsToContents();
 }
@@ -370,12 +411,13 @@ void MainWindow::about()
 
     text = QString("<b>").append(QApplication::applicationName()).append("</b>")
             .append(tr("<p>Semplice programma per effettuare test di performance di database.</p>"))
-            .append(tr("<p><small>versione: ")).append(qApp->applicationVersion()).append("<br/>")
+            .append(tr("<p>versione: ")).append(qApp->applicationVersion()).append("<br/>")
             .append(tr("versione librerie Qt: %1 (%2)<br/>")).arg(qVersion(), QSysInfo::buildCpuArchitecture())
-            .append(tr("Indirizzo server: ")).append(ConnectionParameters::hostName()).append("<br/>")
-            .append(tr("Nome database: ")).append(ConnectionParameters::databaseName()).append("<br/>")
+            .append(tr("Configurazione: ")).append(m_cfg.db().name).append("<br/>")
+            .append(tr("Indirizzo server: ")).append(m_cfg.db().specs.hostname).append("<br/>")
+            .append(tr("Nome database: ")).append(m_cfg.db().specs.databaseName).append("<br/>")
             .append(tr("Sistema operativo: %1 (%2)<br/>")).arg(QSysInfo::prettyProductName(), QSysInfo::currentCpuArchitecture())
-            .append(tr("Postazione: ")).append(QSysInfo::machineHostName()).append("</small></p>")
+            .append(tr("Postazione: ")).append(QSysInfo::machineHostName()).append("</p>")
             .append("<a href='%1'>%2</a>").arg(qApp->organizationDomain()).arg(qApp->organizationName())
             .append(tr("<p><small>sviluppato da <a href='http://www.zelando.com'>Zelando</a></small></p>"));
 

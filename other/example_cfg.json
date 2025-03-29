@@ -1,0 +1,24 @@
+{
+    "db": {
+        "name": "test sqlite",
+        "type": "QSQLITE",
+        "connectOptions": "",
+        "hostname": "",
+        "port": "",
+        "databaseName": ":memory:",
+        "username": "",
+        "password": ""
+    },
+    "queries": [
+        {
+            "name": "Query #1",
+            "sql": "select * from ZAC_Agencies;",
+            "type": "GENERIC"
+        },
+        {
+            "name": "Query #2",
+            "sql": "select * from ZAC_Promoters;",
+            "type": "BANDWIDTH"
+        }
+    ]
+}

@@ -12,6 +12,17 @@ DBManager &DBManager::instance()
     return manager;
 }
 
+void DBManager::clear()
+{
+    DBManager::instance().clearImpl();
+}
+
+void DBManager::setDb(DB db)
+{
+    DBManager::instance().clearImpl();
+    DBManager::instance().addDbImpl(std::move(db));
+}
+
 void DBManager::addDb(DB db)
 {
     DBManager::instance().addDbImpl(std::move(db));
@@ -35,6 +46,11 @@ DB DBManager::tryGetDb(const QString &name)
 ConnectionTestResult DBManager::testConnection(const QString &connectionName, const DBConnectionSpecs &specs)
 {
     return DBManager::instance().testConnectionImpl(connectionName, specs);
+}
+
+void DBManager::clearImpl()
+{
+    m_dbs.clear();
 }
 
 void DBManager::addDbImpl(DB db)

@@ -37,8 +37,8 @@ set(SOURCES
     models/querystatsmodel.h models/querystatsmodel.cpp
     models/querymodel.h models/querymodel.cpp
     helpers/xlsxhelper.h helpers/xlsxhelper.cpp
-    connectionparameters.h connectionparameters.cpp
-    helpers/settingshelper.h helpers/settingshelper.cpp
+    connectionparameters.h
+
     version.h
     stable.h
     mainwindow.ui
@@ -75,6 +75,10 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         ${RESOURCES}
         ${SOURCES}
         ${WIN32_RESOURCES}
+        objects/configuration.h objects/configuration.cpp
+        objects/querydef.h objects/querydef.cpp
+        serializers/dbserializer.h serializers/dbserializer.cpp
+        serializers/configserializer.h serializers/configserializer.cpp
     )
 else()
     add_executable(DbStressTest

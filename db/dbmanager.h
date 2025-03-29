@@ -21,6 +21,8 @@ private:
 
 public:
     static DBManager &instance();
+    static void clear();
+    static void setDb(DB db);
     static void addDb(DB db);
     static QStringList allDbs();
     static DB getDb(const QString &name);
@@ -29,6 +31,7 @@ public:
     static ConnectionTestResult testConnection(const QString &connectionName, const DBConnectionSpecs &specs);
 
 private:
+    void clearImpl();
     void addDbImpl(DB db);
     QStringList allDbsImpl() const;
     DB getDbImpl(const QString &name) const;

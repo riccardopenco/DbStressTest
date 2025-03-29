@@ -1,6 +1,7 @@
 #ifndef QUERY_H
 #define QUERY_H
 
+#include "querydef.h"
 #include "querystats.h"
 
 #include <QString>
@@ -16,18 +17,26 @@ public:
         Bandwidth
     };
 
-    explicit Query(const QString &query = {}, const QString &name = {});
-    Query(Type type, const QString &query = {}, const QString &name = {});
+    Query() = default;
+    Query(const Query &) = default;
+    Query(Query &&) = default;
+    explicit Query(st::QueryDef q);
+    // explicit Query(const QString &query = {}, const QString &name = {});
+    // Query(Type type, const QString &query = {}, const QString &name = {});
+    ~Query() = default;
 
-    Type type() const;
+    Query &operator=(const Query &) = default;
+    Query &operator=(Query &&) = default;
+
+    st::QueryDef::Type type() const;
     QString typeDescription() const;
-    void setType(const Type &type);
+    // void setType(const Type &type);
 
     QString query() const;
-    void setQuery(const QString &query);
+    // void setQuery(const QString &query);
 
     QString name() const;
-    void setName(const QString &name);
+    // void setName(const QString &name);
 
     int runCount() const;
     int successCount() const;
@@ -45,9 +54,10 @@ public:
 //    void appendResult(QueryStats &&result);
 
 private:
-    Type m_type{Type::Generic};
-    QString m_query{};
-    QString m_name{};
+    st::QueryDef m_query;
+    // Type m_type{Type::Generic};
+    // QString m_query{};
+    // QString m_name{};
     QList<QueryStats> m_stats{};
 
     int m_successCount{0};

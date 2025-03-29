@@ -1,65 +1,57 @@
 #include "query.h"
 
-Query::Query(const QString &query, const QString &name) :
-    m_query{query},
-    m_name{name}
+Query::Query(st::QueryDef q)
+    : m_query(std::move(q))
 {
 }
 
-Query::Query(Type type, const QString &query, const QString &name) :
-    m_type{type},
-    m_query{query},
-    m_name{name}
-{
-}
+// Query::Query(const QString &query, const QString &name) :
+//     m_query{query},
+//     m_name{name}
+// {
+// }
 
-Query::Type Query::type() const
+// Query::Query(Type type, const QString &query, const QString &name) :
+//     m_type{type},
+//     m_query{query},
+//     m_name{name}
+// {
+// }
+
+st::QueryDef::Type Query::type() const
 {
-    return m_type;
+    return m_query.type();
 }
 
 QString Query::typeDescription() const
 {
-    QString resp{};
-    switch (m_type)
-    {
-    case Type::Generic:
-        resp = QObject::tr("Generica");
-        break;
-    case Type::Performance:
-        resp = QObject::tr("Prestazioni");
-        break;
-    case Type::Bandwidth:
-        resp = QObject::tr("Banda");
-        break;
-    }
-    return resp;
+    return m_query.typeDescr();
 }
 
-void Query::setType(const Type &type)
-{
-    m_type = type;
-}
+// void Query::setType(const Type &type)
+// {
+//     m_type = type;
+// }
 
 QString Query::query() const
 {
-    return m_query;
+    return m_query.sql();
 }
 
-void Query::setQuery(const QString &query)
-{
-    m_query = query;
-}
+// void Query::setQuery(const QString &query)
+// {
+//     m_query = query;
+// }
 
 QString Query::name() const
 {
-    return m_name;
+    return m_query.name();
 }
 
-void Query::setName(const QString &name)
-{
-    m_name = name;
-}
+// void Query::setName(const QString &name)
+// {
+//     m_name = name;
+// }
 
 int Query::runCount() const
 {

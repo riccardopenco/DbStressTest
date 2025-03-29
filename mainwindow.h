@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "objects/configuration.h"
 #include "objects/querycontroller.h"
 #include "objects/querystats.h"
 #include "objects/query.h"
@@ -27,6 +28,10 @@ public:
     ~MainWindow();
 
 private slots:
+    void setupForm();
+    void loadConfiguration();
+    void saveConfiguration();
+    void setConfiguration(st::Configuration cfg);
     void changeConnection();
     void start();
     void pause();
@@ -59,6 +64,8 @@ private:
 
 private:
     Ui::MainWindow *ui;
+    st::Configuration m_cfg;
+
     int m_workerCount{4};
     QList<int> m_queriesToRun{};
     int m_queriesToRunCount{0};

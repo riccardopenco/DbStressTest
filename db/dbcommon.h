@@ -28,6 +28,11 @@ struct DB
 {
     QString name;
     DBConnectionSpecs specs;
+
+    bool isValid() const
+    {
+        return !name.isEmpty() && specs.areValid();
+    }
 };
 
 struct ConnectionTestResult
