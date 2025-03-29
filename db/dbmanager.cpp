@@ -35,12 +35,12 @@ QStringList DBManager::allDbs()
 
 DB DBManager::getDb(const QString &name)
 {
-    return DBManager::instance().getDbImpl(name);
+    return name.isEmpty() ? DBManager::instance().getDbImpl() :  DBManager::instance().getDbImpl(name);
 }
 
 DB DBManager::tryGetDb(const QString &name)
 {
-    return DBManager::instance().tryGetDbImpl(name);
+    return name.isEmpty() ? DBManager::instance().tryGetDbImpl() : DBManager::instance().tryGetDbImpl(name);
 }
 
 ConnectionTestResult DBManager::testConnection(const QString &connectionName, const DBConnectionSpecs &specs)
@@ -61,6 +61,22 @@ void DBManager::addDbImpl(DB db)
 QStringList DBManager::allDbsImpl() const
 {
     return m_dbs.keys();
+}
+
+DB DBManager::getDbImpl() const
+{
+    if (m_dbs.empty())
+        return {};
+
+    return *m_dbs.begin();
+}
+
+DB DBManager::tryGetDbImpl() const
+{
+    if (m_dbs.empty())
+        throw std::runtime_error("No database configured");
+
+    return *m_dbs.begin();
 }
 
 DB DBManager::getDbImpl(const QString &name) const

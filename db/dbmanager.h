@@ -25,8 +25,8 @@ public:
     static void setDb(DB db);
     static void addDb(DB db);
     static QStringList allDbs();
-    static DB getDb(const QString &name);
-    static DB tryGetDb(const QString &name);
+    static DB getDb(const QString &name = {});      // if name is not, returns the first (and probably only) one
+    static DB tryGetDb(const QString &name= {});    // if name is not, returns the first (and probably only) one
 
     static ConnectionTestResult testConnection(const QString &connectionName, const DBConnectionSpecs &specs);
 
@@ -34,6 +34,8 @@ private:
     void clearImpl();
     void addDbImpl(DB db);
     QStringList allDbsImpl() const;
+    DB getDbImpl() const;
+    DB tryGetDbImpl() const;
     DB getDbImpl(const QString &name) const;
     DB tryGetDbImpl(const QString &name) const;
 

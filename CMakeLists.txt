@@ -37,7 +37,7 @@ set(SOURCES
     models/querystatsmodel.h models/querystatsmodel.cpp
     models/querymodel.h models/querymodel.cpp
     helpers/xlsxhelper.h helpers/xlsxhelper.cpp
-    connectionparameters.h
+
 
     version.h
     stable.h

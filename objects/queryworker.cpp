@@ -1,6 +1,6 @@
 #include "queryworker.h"
 
-#include "connectionparameters.h"
+#include "db/dbmanager.h"
 
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -35,27 +35,23 @@ void QueryWorker::process(const QString &query)
 {
     if (m_query == nullptr)
     {
-        QSqlDatabase db = QSqlDatabase::addDatabase(ConnectionParameters::driverName(), m_connectionName);
+        auto specs = st::DBManager::getDb().specs;
+        QSqlDatabase db = QSqlDatabase::addDatabase(specs.type, m_connectionName);
 
-        // if (ConnectionParameters::useConnectionString())
-        // {
-        //     ConnectionParameters::con
-        //     // ui->connectionString->setText(generateConnectionString());
-        //     db.setDatabaseName(generateConnectionString());
-        // }
-        // else
-        // {
-            if (!ConnectionParameters::databaseName().isEmpty())
-                db.setDatabaseName(ConnectionParameters::databaseName());
-            if (!ConnectionParameters::userName().isEmpty())
-                db.setUserName(ConnectionParameters::userName());
-            if (!ConnectionParameters::password().isEmpty())
-                db.setPassword(ConnectionParameters::password());
-            // if (!ConnectionParameters::hostName().isEmpty())
-                db.setHostName(ConnectionParameters::hostName());
-        // }
+        if (!specs.hostname.isEmpty())
+            db.setHostName(specs.hostname);
+        if (!specs.connectOptions.isEmpty())
+            db.setConnectOptions(specs.connectOptions);
+        if (!specs.databaseName.isEmpty())
+            db.setDatabaseName(specs.databaseName);
+        if (!specs.username.isEmpty())
+            db.setUserName(specs.username);
+        if (!specs.password.isEmpty())
+            db.setPassword(specs.password);
 
-        db.open();
+        auto res = db.open();
+        if (!res)
+            return;
         m_query = new QSqlQuery(db);
         m_query->setForwardOnly(true);
     }
