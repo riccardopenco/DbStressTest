@@ -1,0 +1,383 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
+#include "helpers/settingshelper.h"
+#include "helpers/xlsxhelper.h"
+#include "connectionparameters.h"
+#include "dialogs/sqlconnectiondialog.h"
+#include "objects/querystats.h"
+#include "delegates/numericdelegate.h"
+#include "xlsxdocument.h"
+
+#include <QFileDialog>
+#include <QFile>
+#include <QMessageBox>
+#include <QSysInfo>
+
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::MainWindow)
+{
+    ui->setupUi(this);
+
+    m_workerCount = QThread::idealThreadCount();
+    ui->workerCount->setValue(m_workerCount);
+    clearStatistics();
+
+    qRegisterMetaType<QueryStats>("QueryStats");
+
+    m_queryProxyModel.setSourceModel(&m_queryModel);
+    m_queryProxyModel.setCheckableColumns({checkableColumn});
+    ui->tableView->verticalHeader()->hide();
+    ui->tableView->setAlternatingRowColors(true);
+    const QList<int> numericColumns{
+        {
+            static_cast<int>(QueryStatsModel::ModelColumn::TotalExecTimeMs),
+            static_cast<int>(QueryStatsModel::ModelColumn::TotalFetchTimeMs),
+            static_cast<int>(QueryStatsModel::ModelColumn::AverageExecTimeMs),
+            static_cast<int>(QueryStatsModel::ModelColumn::AverageFetchTimeMs),
+            static_cast<int>(QueryStatsModel::ModelColumn::RowCount),
+            static_cast<int>(QueryStatsModel::ModelColumn::AffectedRows),
+            static_cast<int>(QueryStatsModel::ModelColumn::Weight),
+        }
+    };
+    for (auto column : numericColumns)
+        ui->tableView->setItemDelegateForColumn(column, new NumericDelegate());
+    ui->tableView->setModel(&m_queryProxyModel);
+
+    ui->buttonPause->hide();
+
+    m_disableControls = { ui->buttonRun, /*ui->buttonPause, ui->buttonStop, */ui->buttonCheckAll, ui->buttonClearStats, ui->buttonStatsToExcel, ui->workerCount, ui->repetitionCount };
+
+    prepareQueries();
+
+    connect(ui->actionChangeConnection, &QAction::triggered, this, &MainWindow::changeConnection);
+    connect(ui->actionExit, &QAction::triggered, qApp, &QApplication::quit);
+    connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::about);
+    connect(ui->buttonRun, &QPushButton::clicked, this, &MainWindow::start);
+    connect(ui->buttonStop, &QPushButton::clicked, this, &MainWindow::stop);
+    connect(ui->buttonClearStats, &QPushButton::clicked, &m_queryModel, &QueryStatsModel::clearStats);
+    connect(ui->buttonStatsToExcel, &QPushButton::clicked, this, &MainWindow::extractStatsToXlsx);
+    connect(ui->buttonCheckAll, &QPushButton::toggled, this, &MainWindow::checkUncheckAllQueries);
+    connect(&m_timer, &QTimer::timeout, this, [this]() { m_endTime = QDateTime::currentDateTime(); updateDuration(); });
+
+    ui->buttonCheckAll->setChecked(true);
+}
+
+MainWindow::~MainWindow()
+{
+    SettingsHelper::saveSettings(m_queryModel.queryList());
+    delete ui;
+    qDeleteAll(m_workers);
+}
+
+void MainWindow::changeConnection()
+{
+    if (m_running)
+    {
+        QMessageBox msg;
+        msg.setIcon(QMessageBox::Information);
+        msg.setText(tr("Impossibile cambiare la connessione al database mentre il test è in corso.\n"
+                       "Attendi il completamento del test prima di modificare la connessione."));
+        msg.setStandardButtons(QMessageBox::Ok);
+        msg.exec();
+        return;
+    }
+    qDeleteAll(m_workers);
+    m_workers.clear();
+
+    SqlConnectionDialog d;
+    if (d.exec() == QDialog::Rejected)
+        return;
+    ui->hostName->setText(ConnectionParameters::hostName());
+    ui->databaseName->setText(ConnectionParameters::databaseName());
+}
+
+void MainWindow::start()
+{
+    m_queriesToRun.clear();
+
+    for (int n = 0; n < ui->repetitionCount->value(); ++n)
+    {
+        for (const auto &index : m_queryProxyModel.selectedSourceIndexes())
+            m_queriesToRun.append(m_queryModel.index(index.row(), 0).data().toInt());
+        m_queriesToRunCount = m_queriesToRun.count();
+    }
+    if (m_queriesToRunCount == 0)
+    {
+        QMessageBox msg;
+        msg.setIcon(QMessageBox::Warning);
+        msg.setText(tr("Selezionare le query da eseguire"));
+        msg.setStandardButtons(QMessageBox::Ok);
+        msg.setDefaultButton(QMessageBox::Ok);
+        msg.exec();
+        return;
+    }
+
+    disableControls();
+    m_startTime = m_endTime = QDateTime::currentDateTime();
+    updateDuration();
+    m_timer.start(125);
+
+    m_workerCount = ui->workerCount->value();
+    prepareWorkers();
+
+    m_running = true;
+    m_stopped = false;
+    for (int i = 0; i < m_workerCount; ++i)
+        m_workers.at(i)->process(nextQuery());
+}
+
+void MainWindow::pause()
+{
+    m_stopped = true;
+}
+
+void MainWindow::stop()
+{
+    m_stopped = true;
+}
+
+void MainWindow::workedStarted()
+{
+    ui->workersRunning->setText(QString::number(++m_workersRunning));
+}
+
+void MainWindow::workerFinished()
+{
+    ui->execCount->setText(QString::number(--m_queriesToRunCount));
+    ui->workersRunning->setText(QString::number(--m_workersRunning));
+}
+
+void MainWindow::execStarted()
+{
+    ui->execRunning->setText(QString::number(++m_execRunning));
+}
+
+void MainWindow::execFinished()
+{
+    ui->execRunning->setText(QString::number(--m_execRunning));
+}
+
+void MainWindow::fetchStarted()
+{
+    ui->fetchRunning->setText(QString::number(++m_fetchRunning));
+}
+
+void MainWindow::fetchFinished()
+{
+    ui->fetchRunning->setText(QString::number(--m_fetchRunning));
+}
+
+void MainWindow::querySucceeded()
+{
+    ui->succeededCount->setText(QString::number(++m_succeeded));
+}
+
+void MainWindow::queryFailed()
+{
+    ui->failedCount->setText(QString::number(++m_failed));
+}
+
+void MainWindow::handleResult(const QueryStats &result)
+{
+    m_queryModel.addResult(result);
+
+    const QString query{nextQuery()};
+    if (query.isEmpty())
+    {
+        if (m_workersRunning == 0)
+        {
+            m_running = false;
+            m_timer.stop();
+            m_endTime = QDateTime::currentDateTime();
+            updateDuration();
+            enableControls();
+        }
+    }
+    else
+    {
+        QueryController *worker = qobject_cast<QueryController *>(sender());
+        worker->process(query);
+    }
+}
+
+void MainWindow::updateDuration()
+{
+    QTime time{QTime(0, 0).addMSecs(m_startTime.msecsTo(m_endTime))};
+    ui->duration->setText(time.toString("hh:mm:ss.zzz"));
+}
+
+void MainWindow::setControlsEnabled(bool enabled)
+{
+    for (auto control : m_disableControls)
+        control->setEnabled(enabled);
+}
+
+void MainWindow::disableControls()
+{
+    setControlsEnabled(false);
+}
+
+void MainWindow::enableControls()
+{
+    setControlsEnabled(true);
+}
+
+void MainWindow::extractStatsToXlsx()
+{
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Seleziona il nome del file"),
+                                                    QString(),
+                                                    tr("File Excel (*.xlsx)"));
+
+    if (fileName.isEmpty())
+        return;
+
+    if (!fileName.endsWith(".xlsx", Qt::CaseInsensitive))
+        fileName.append(".xlsx");
+
+    if (QFile::exists(fileName))
+    {
+        QMessageBox msg;
+
+        msg.setIcon(QMessageBox::Question);
+        msg.setText(tr("Attenzione, il file %1 esiste già. "
+                       "Lo sovrascrivo?")
+                    .arg(QDir::toNativeSeparators(fileName)));
+        msg.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msg.setDefaultButton(QMessageBox::No);
+
+        int ret = msg.exec();
+
+        if (ret == QMessageBox::No)
+            return;
+
+        if (!QFile::remove(fileName))
+        {
+            msg.setIcon(QMessageBox::Critical);
+            msg.setText(tr("Impossibile sovrascrivere il file %1.")
+                        .arg(QDir::toNativeSeparators(fileName)));
+            msg.setStandardButtons(QMessageBox::Ok);
+            msg.setDefaultButton(QMessageBox::Ok);
+
+            msg.exec();
+            return;
+        }
+    }
+
+    QXlsx::Document xlsx;
+
+    XlsxHelper::dumpModelToXlsxWithForegroundRole(xlsx, m_queryModel);
+
+    int row{m_queryModel.rowCount() + 2};
+    xlsx.write(++row, 1, tr("Server: ").append(ConnectionParameters::hostName()));
+    xlsx.write(++row, 1, tr("Database: ").append(ConnectionParameters::databaseName()));
+    xlsx.write(++row, 1, tr("Numero worker: %1").arg(m_workerCount));
+    xlsx.write(++row, 1, tr("Numero query eseguite con successo: %1").arg(m_succeeded));
+    xlsx.write(++row, 1, tr("Numero query eseguite con errore: %1").arg(m_failed));
+    QTime time{QTime(0, 0).addMSecs(m_startTime.msecsTo(m_endTime))};
+    xlsx.write(++row, 1, tr("Tempo totale di esecuzione: ").append(time.toString("hh:mm:ss.zzz")));
+
+    QMessageBox msg;
+    if (xlsx.saveAs(fileName))
+    {
+        msg.setIcon(QMessageBox::Information);
+        msg.setText(tr("Il file %1 è stato salvato correttamente").arg(QDir::toNativeSeparators(fileName)));
+        msg.setStandardButtons(QMessageBox::Ok);
+        msg.setDefaultButton(QMessageBox::Ok);
+    }
+    else
+    {
+        msg.setIcon(QMessageBox::Critical);
+        msg.setText(tr("Errore durante il salvataggio del file %1").arg(QDir::toNativeSeparators(fileName)));
+        msg.setStandardButtons(QMessageBox::Ok);
+        msg.setDefaultButton(QMessageBox::Ok);
+    }
+    msg.exec();
+}
+
+void MainWindow::checkUncheckAllQueries(bool checked)
+{
+    for (int i = 0; i < m_queryProxyModel.rowCount(); ++i)
+    {
+        QModelIndex sourceIndex{m_queryModel.index(i, checkableColumn)};
+        QModelIndex index{m_queryProxyModel.mapFromSource(sourceIndex)};
+        m_queryProxyModel.setData(index, checked ? Qt::Checked : Qt::Unchecked, Qt::CheckStateRole);
+    }
+    ui->buttonCheckAll->setText(checked ? tr("Deseleziona tutte") : tr("Seleziona tutte"));
+}
+
+void MainWindow::clearStatistics()
+{
+    ui->hostName->setText(ConnectionParameters::hostName());
+    ui->databaseName->setText(ConnectionParameters::databaseName());
+    ui->duration->setText(QTime(0, 0).toString("hh:mm:ss.zzz"));
+    ui->workersRunning->setText(QStringLiteral("0"));
+    ui->execRunning->setText(QStringLiteral("0"));
+    ui->fetchRunning->setText(QStringLiteral("0"));
+    ui->execCount->setText(QStringLiteral("0"));
+    ui->succeededCount->setText(QStringLiteral("0"));
+    ui->failedCount->setText(QStringLiteral("0"));
+}
+
+void MainWindow::prepareWorkers()
+{
+    while (m_workers.count() < m_workerCount)
+        addWorker();
+}
+
+void MainWindow::addWorker()
+{
+    QueryController *worker = new QueryController();
+    connect(worker, &QueryController::running, this, &MainWindow::workedStarted);
+    connect(worker, &QueryController::stopped, this, &MainWindow::workerFinished);
+    connect(worker, &QueryController::execStarted, this, &MainWindow::execStarted);
+    connect(worker, &QueryController::execFinished, this, &MainWindow::execFinished);
+    connect(worker, &QueryController::fetchStarted, this, &MainWindow::fetchStarted);
+    connect(worker, &QueryController::fetchFinished, this, &MainWindow::fetchFinished);
+    connect(worker, &QueryController::succeeded, this, &MainWindow::querySucceeded);
+    connect(worker, &QueryController::failed, this, &MainWindow::queryFailed);
+    connect(worker, &QueryController::resultReady, this, &MainWindow::handleResult);
+    m_workers.append(worker);
+}
+
+void MainWindow::prepareQueries()
+{
+    m_queryModel.clear();
+    for (const auto &query : SettingsHelper::readQueries())
+        m_queryModel.appendQuery(query);
+
+    ui->tableView->resizeColumnsToContents();
+}
+
+QString MainWindow::nextQuery()
+{
+    QString next{};
+
+    if (m_stopped
+            || m_queriesToRun.isEmpty())
+        return next;
+
+    next = m_queryModel.getToRunAt(m_queriesToRun.takeFirst()).query();
+
+    return next;
+}
+
+void MainWindow::about()
+{
+    QString text;
+
+    text = QString("<b>").append(QApplication::applicationName()).append("</b>")
+            .append(tr("<p>Semplice programma per effettuare test di performance di database.</p>"))
+            .append(tr("<p><small>versione: ")).append(qApp->applicationVersion()).append("<br/>")
+            .append(tr("versione librerie Qt: %1 (%2)<br/>")).arg(qVersion(), QSysInfo::buildCpuArchitecture())
+            .append(tr("Indirizzo server: ")).append(ConnectionParameters::hostName()).append("<br/>")
+            .append(tr("Nome database: ")).append(ConnectionParameters::databaseName()).append("<br/>")
+            .append(tr("Sistema operativo: %1 (%2)<br/>")).arg(QSysInfo::prettyProductName(), QSysInfo::currentCpuArchitecture())
+            .append(tr("Postazione: ")).append(QSysInfo::machineHostName()).append("</small></p>")
+            .append("<a href='%1'>%2</a>").arg(qApp->organizationDomain()).arg(qApp->organizationName())
+            .append(tr("<p><small>sviluppato da <a href='http://www.zelando.com'>Zelando</a></small></p>"));
+
+    QMessageBox::about(this, QApplication::applicationName(), text);
+}

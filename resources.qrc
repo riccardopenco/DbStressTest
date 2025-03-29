@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/img">
+        <file alias="logo.png">img/DbStressTest.png</file>
+        <file alias="about.png">img/about.png</file>
+        <file alias="connection.png">img/connection.png</file>
+    </qresource>
+</RCC>
