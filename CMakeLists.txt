@@ -19,12 +19,11 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Sql)
-# find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets Sql)
 
 set(SOURCES
     main.cpp
     mainwindow.h mainwindow.cpp
-    db/dbconnectiondetails.h
+    db/dbcommon.h
     db/dbconnection.h db/dbconnection.cpp
     db/dbmanager.h db/dbmanager.cpp
     db/scopedtransaction.h db/scopedtransaction.cpp

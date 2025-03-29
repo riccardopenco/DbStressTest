@@ -2,14 +2,17 @@
 
 #include <QCoreApplication>
 
+namespace st
+{
+
 std::atomic<int> DBConnection::connectionId(0);
 
-DBConnection::DBConnection(DBConnectionDetails connectionDetails) :
+DBConnection::DBConnection(DBConnectionSpecs connectionDetails) :
     DBConnection(std::move(connectionDetails), [](const QString &){})
 {
 }
 
-DBConnection::DBConnection(DBConnectionDetails connectionDetails, std::function<void (const QString &)> logger)
+DBConnection::DBConnection(DBConnectionSpecs connectionDetails, std::function<void (const QString &)> logger)
 {
     ++connectionId;
     m_connectionName = QString("db_connection_%1").arg(connectionId);
@@ -54,8 +57,8 @@ bool DBConnection::open() const
     if (!m_connectionDetails.connectOptions.isEmpty())
         db.setConnectOptions(m_connectionDetails.connectOptions);
 
-    if (!m_connectionDetails.hostName.isEmpty())
-        db.setHostName(m_connectionDetails.hostName);
+    if (!m_connectionDetails.hostname.isEmpty())
+        db.setHostName(m_connectionDetails.hostname);
 
     if (m_connectionDetails.port != -1)
         db.setPort(m_connectionDetails.port);
@@ -63,8 +66,8 @@ bool DBConnection::open() const
     if (!m_connectionDetails.databaseName.isEmpty())
         db.setDatabaseName(m_connectionDetails.databaseName);
 
-    if (!m_connectionDetails.userName.isEmpty())
-        db.setUserName(m_connectionDetails.userName);
+    if (!m_connectionDetails.username.isEmpty())
+        db.setUserName(m_connectionDetails.username);
 
     if (!m_connectionDetails.password.isEmpty())
         db.setPassword(m_connectionDetails.password);
@@ -101,3 +104,5 @@ void DBConnection::maybeLog(const QString &text) const
 {
     m_logger(text);
 }
+
+} // namespace st

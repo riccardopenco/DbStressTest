@@ -1,29 +1,185 @@
 #include "sqlconnectiondialog.h"
 #include "ui_sqlconnectiondialog.h"
 
+#include "db/dbmanager.h"
+
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QMessageBox>
 #include <QTimer>
 #include <QSettings>
 
-SqlConnectionDialog::SqlConnectionDialog(QWidget *parent) :
+SqlConnectionDialog::SqlConnectionDialog(const st::DB &db, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SqlConnectionDialog)
 {
     ui->setupUi(this);
+    QTimer::singleShot(0, this, [this, &db](){ setupForm(db); });
+}
 
-    connect(ui->driver, &QComboBox::currentTextChanged,
-            [this](const QString &driver)
-            {
-                bool enabled{driver.compare(QStringLiteral("QODBC"), Qt::CaseInsensitive) == 0};
-                if (!enabled)
-                    ui->useConnectionString->setChecked(false);
-                ui->useConnectionString->setEnabled(enabled);
-                ui->nativeClientVersion->setEnabled(enabled);
-            });
+SqlConnectionDialog::~SqlConnectionDialog()
+{
+    delete ui;
+}
+
+st::DB SqlConnectionDialog::db() const
+{
+    return st::DB
+      {
+        .name   = name(),
+        .specs  = specs(),
+      };
+}
+
+st::DBConnectionSpecs SqlConnectionDialog::specs() const
+{
+    return
+      {
+        .type                       = driverName(),
+        .connectOptions             = connectionOptions(),
+        .hostname                   = hostname(),
+        .port                       = port(),
+        .databaseName               = databaseName(),
+        .username                   = username(),
+        .password                   = password(),
+        .numericalPrecisionPolicy   = QSql::LowPrecisionDouble,
+      };
+}
+
+void SqlConnectionDialog::setName(const QString &name) const
+{
+    ui->name->setText(name);
+}
+
+void SqlConnectionDialog::setDriverName(const QString &driverName) const
+{
+    if (driverName.isEmpty())
+        ui->driver->setCurrentIndex(-1);
+    else
+        ui->driver->setCurrentIndex(ui->driver->findText(driverName));
+}
+
+void SqlConnectionDialog::setConnectionOptions(const QString &connectionOptions) const
+{
+    ui->connectionOptions->setText(connectionOptions);
+}
+
+void SqlConnectionDialog::setDatabaseName(const QString &databaseName) const
+{
+    ui->databaseName->setText(databaseName);
+}
+
+void SqlConnectionDialog::setUsername(const QString &username) const
+{
+    ui->username->setText(username);
+}
+
+void SqlConnectionDialog::setPassword(const QString &password) const
+{
+    ui->password->setText(password);
+}
+
+void SqlConnectionDialog::setHostname(const QString &hostname) const
+{
+    ui->hostname->setText(hostname);
+}
+
+void SqlConnectionDialog::setPort(int port) const
+{
+    ui->port->setValue(port);
+}
+
+QString SqlConnectionDialog::name() const
+{
+    return ui->name->text();
+}
+
+QString SqlConnectionDialog::driverName() const
+{
+    return ui->driver->currentText();
+}
+
+QString SqlConnectionDialog::connectionOptions() const
+{
+    return ui->connectionOptions->text();
+}
+
+QString SqlConnectionDialog::databaseName() const
+{
+    return ui->databaseName->text();
+}
+
+QString SqlConnectionDialog::username() const
+{
+    return ui->username->text();
+}
+
+QString SqlConnectionDialog::password() const
+{
+    return ui->password->text();
+}
+
+QString SqlConnectionDialog::hostname() const
+{
+    return ui->hostname->text();
+}
+
+int SqlConnectionDialog::port() const
+{
+    return ui->port->value();
+}
+
+void SqlConnectionDialog::testConnection()
+{
+    auto res = tryConnection(QStringLiteral("__test_connection__"));
+    QMessageBox msg;
+    if (res.isOk)
+    {
+        msg.setIcon(QMessageBox::Information);
+        msg.setText(tr("Connessione con il database effettuata correttamente"));
+        ui->testResult->setText(tr("Test effettuato correttamente"));
+    }
+    else
+    {
+        msg.setIcon(QMessageBox::Critical);
+        msg.setText(tr("Errore durante la connessione con il server:\n").append(res.errMsg));
+        ui->testResult->setText(tr("Errore di connessione"));
+    }
+
+    msg.setStandardButtons(QMessageBox::Ok);
+    msg.exec();
+}
+
+void SqlConnectionDialog::Confirm()
+{
+    if (name().isEmpty())
+    {
+        QMessageBox msg;
+        msg.setIcon(QMessageBox::Critical);
+        msg.setWindowTitle(tr("Errore"));
+        msg.setText(tr("L'identificativo del database deve essere necessariamente specificato"));
+        msg.setStandardButtons(QMessageBox::Ok);
+        msg.exec();
+        ui->name->setFocus();
+        return;
+    }
+    if (!specs().areValid())
+    {
+        QMessageBox msg;
+        msg.setIcon(QMessageBox::Information);
+        msg.setWindowTitle(tr("Errore"));
+        msg.setText(tr("La configurazione del database non è corretta"));
+        msg.setStandardButtons(QMessageBox::Ok);
+        msg.exec();
+        return;
+    }
+    accept();
+}
+
+void SqlConnectionDialog::setupForm(const st::DB &db)
+{
     connect(ui->buttonTest, &QPushButton::clicked, this, &SqlConnectionDialog::testConnection);
-    connect(ui->buttonConnect, &QPushButton::clicked, this, &SqlConnectionDialog::openConnection);
+    connect(ui->buttonConfirm, &QPushButton::clicked, this, &SqlConnectionDialog::Confirm);
     connect(ui->buttonCancel, &QPushButton::clicked, this, &SqlConnectionDialog::reject);
 
     QStringList drivers = QSqlDatabase::drivers();
@@ -35,171 +191,25 @@ SqlConnectionDialog::SqlConnectionDialog(QWidget *parent) :
     drivers.removeAll("QPSQL7");
     drivers.removeAll("QTDS7");
 
-//    if (!drivers.contains("QSQLITE"))
-//        ui.dbCheckBox->setEnabled(false);
-
     ui->driver->addItems(drivers);
 
-    QTimer::singleShot(0, this, &SqlConnectionDialog::setUiParameters);
-//    setUiParameters();
+    setUiParameters(db);
 }
 
-SqlConnectionDialog::~SqlConnectionDialog()
+void SqlConnectionDialog::setUiParameters(const st::DB &db)
 {
-    delete ui;
+    ui->name->setText(db.name);
+
+    setDriverName(db.specs.type);
+    setConnectionOptions(db.specs.connectOptions);
+    setHostname(db.specs.hostname);
+    setPort(db.specs.port);
+    setDatabaseName(db.specs.databaseName);
+    setUsername(db.specs.username);
+    setPassword(db.specs.password);
 }
 
-QString SqlConnectionDialog::driverName() const
+st::ConnectionTestResult SqlConnectionDialog::tryConnection(const QString &connectionName)
 {
-    return ui->driver->currentText();
-}
-
-QString SqlConnectionDialog::databaseName() const
-{
-    return ui->databaseName->text();
-}
-
-QString SqlConnectionDialog::userName() const
-{
-    return ui->userName->text();
-}
-
-QString SqlConnectionDialog::password() const
-{
-    return ui->password->text();
-}
-
-QString SqlConnectionDialog::hostname() const
-{
-    return ui->hostName->text();
-}
-
-int SqlConnectionDialog::port() const
-{
-    return ui->port->value();
-}
-
-void SqlConnectionDialog::testConnection()
-{
-    QMessageBox msg;
-    if (tryConnection(ConnectionParameters::testConnectionName()))
-    {
-        QSqlDatabase::database(ConnectionParameters::testConnectionName()).close();
-        msg.setIcon(QMessageBox::Information);
-        msg.setText(tr("Connessione con il database effettuata correttamente"));
-        ui->testResult->setText(tr("Test effettuato correttamente"));
-    }
-    else
-    {
-        msg.setIcon(QMessageBox::Critical);
-        msg.setText(tr("Errore durante la connessione con il server:\n").append(QSqlDatabase::database(ConnectionParameters::testConnectionName()).lastError().text()));
-        ui->testResult->setText(tr("Errore di connessione"));
-    }
-
-    msg.setStandardButtons(QMessageBox::Ok);
-    msg.exec();
-    QSqlDatabase::removeDatabase(ConnectionParameters::testConnectionName());
-}
-
-void SqlConnectionDialog::openConnection()
-{
-    QMessageBox msg;
-    if (ui->driver->currentText().isEmpty())
-    {
-        msg.setIcon(QMessageBox::Information);
-        msg.setWindowTitle(tr("Driver database"));
-        msg.setText(tr("Devi selezionare il driver del database"));
-        msg.setStandardButtons(QMessageBox::Ok);
-        msg.exec();
-        ui->driver->setFocus();
-    }
-    else
-    {
-        if (QSqlDatabase::connectionNames().contains(ConnectionParameters::defaultConnectionName()))
-        {
-            QSqlDatabase::database(ConnectionParameters::defaultConnectionName()).close();
-            QSqlDatabase::removeDatabase(ConnectionParameters::defaultConnectionName());
-        }
-        if (tryConnection())
-        {
-            setConnectionParameters();
-            accept();
-        }
-        else
-        {
-            msg.setIcon(QMessageBox::Critical);
-            msg.setText(tr("Errore durante la connessione con il server:\n").append(QSqlDatabase::database(ConnectionParameters::defaultConnectionName()).lastError().text()));
-            ui->testResult->setText(tr("Errore di connessione"));
-        }
-    }
-}
-
-void SqlConnectionDialog::setUiParameters()
-{
-    if (!ConnectionParameters::driverName().isEmpty())
-        ui->driver->setCurrentIndex(ui->driver->findText(ConnectionParameters::driverName()));
-    ui->useConnectionString->setChecked(ConnectionParameters::useConnectionString());
-    if (!ConnectionParameters::databaseName().isEmpty())
-        ui->databaseName->setText(ConnectionParameters::databaseName());
-    if (!ConnectionParameters::userName().isEmpty())
-        ui->userName->setText(ConnectionParameters::userName());
-    if (!ConnectionParameters::password().isEmpty())
-        ui->password->setText(ConnectionParameters::password());
-    if (!ConnectionParameters::hostName().isEmpty())
-        ui->hostName->setText(ConnectionParameters::hostName());
-    ui->port->setValue(ConnectionParameters::port());
-    QStringList values{ConnectionParameters::nativeClientVersion().split(".")};
-    double value = static_cast<double>(values.value(0, QStringLiteral("11")).toInt()) + static_cast<double>(values.value(1, QStringLiteral("0")).toInt()) / 10.0;
-    ui->nativeClientVersion->setValue(value);
-}
-
-void SqlConnectionDialog::setConnectionParameters()
-{
-    ConnectionParameters::setDriverName(ui->driver->currentText());
-    ConnectionParameters::setUseConnectionString(ui->useConnectionString->isChecked());
-    ConnectionParameters::setDatabaseName(ui->databaseName->text());
-    ConnectionParameters::setUserName(ui->userName->text());
-    ConnectionParameters::setPassword(ui->password->text());
-    ConnectionParameters::setHostName(ui->hostName->text());
-    ConnectionParameters::setPort(ui->port->value());
-    const int major{static_cast<int>(ui->nativeClientVersion->value())};
-    const int minor{static_cast<int>((ui->nativeClientVersion->value() - major) * 10)};
-    const QString nacli{QString("%1.%2").arg(major).arg(minor)};
-    ConnectionParameters::setNativeClientVersion(nacli);
-}
-
-QString SqlConnectionDialog::generateConnectionString() const
-{
-    const int major{static_cast<int>(ui->nativeClientVersion->value())};
-    const int minor{static_cast<int>((ui->nativeClientVersion->value() - major) * 10)};
-    const QString nacli{QString("%1.%2").arg(major).arg(minor)};
-    return QString("Driver={SQL Server Native Client %1};Server=%2;Database=%3;Uid=%4;Pwd=%5;")
-            .arg(nacli, ui->hostName->text(), ui->databaseName->text(), ui->userName->text(), ui->password->text());
-}
-
-bool SqlConnectionDialog::tryConnection(const QString &connectionName)
-{
-    QSqlDatabase db = QSqlDatabase::addDatabase(ui->driver->currentText(), connectionName);
-
-    if (ui->useConnectionString->isChecked())
-    {
-        ui->connectionString->setText(generateConnectionString());
-        db.setDatabaseName(generateConnectionString());
-    }
-    else
-    {
-        if (!ui->databaseName->text().isEmpty())
-            db.setDatabaseName(ui->databaseName->text());
-        if (!ui->userName->text().isEmpty())
-            db.setUserName(ui->userName->text());
-        if (!ui->password->text().isEmpty())
-            db.setPassword(ui->password->text());
-        if (!ui->hostName->text().isEmpty())
-            db.setHostName(ui->hostName->text());
-    }
-//    QSqlDatabase db = QSqlDatabase::addDatabase("QODBC", connectionName);
-
-//    db.setDatabaseName("Driver={SQL Server Native Client 11.0};Server=192.168.1.189;Database=ZAC;Uid=sa;Pwd=us%1admin;");
-
-    return db.open();
+    return st::DBManager::testConnection(connectionName, specs());
 }

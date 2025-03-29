@@ -1,7 +1,7 @@
 #ifndef DBCONNECTION_H
 #define DBCONNECTION_H
 
-#include "dbconnectiondetails.h"
+#include "dbcommon.h"
 #include "scopedtransaction.h"
 
 #include <QString>
@@ -10,12 +10,15 @@
 #include <atomic>
 #include <functional>
 
+namespace st
+{
+
 class DBConnection
 {
     friend class DBManager;
 
-    DBConnection(DBConnectionDetails connectionDetails);
-    DBConnection(DBConnectionDetails connectionDetails, std::function<void(const QString &)> logger);
+    DBConnection(DBConnectionSpecs connectionDetails);
+    DBConnection(DBConnectionSpecs connectionDetails, std::function<void(const QString &)> logger);
 public:
     DBConnection(const DBConnection &) = delete;
     DBConnection(DBConnection &&) = delete;
@@ -40,9 +43,11 @@ private:
 private:
     static std::atomic<int> connectionId;
     QString m_connectionName;
-    DBConnectionDetails m_connectionDetails;
+    DBConnectionSpecs m_connectionDetails;
 //    std::function<void(const QString &)> m_logger = [](const QString &){};
     std::function<void(const QString &)> m_logger;
 };
+
+} // namespace st
 
 #endif // DBCONNECTION_H
