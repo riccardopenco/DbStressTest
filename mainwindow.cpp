@@ -145,6 +145,7 @@ void MainWindow::setConfiguration(st::Configuration cfg)
 {
     m_cfg = cfg;
     st::DBManager::setDb(m_cfg.db());
+    ui->dbName->setText(m_cfg.db().name);
     ui->hostname->setText(m_cfg.db().specs.hostname);
     ui->databaseName->setText(m_cfg.db().specs.databaseName);
     prepareQueries();
@@ -171,6 +172,9 @@ void MainWindow::changeConnection()
     auto db = d.db();
     m_cfg.setDb(db);
     st::DBManager::setDb(std::move(db));
+    ui->dbName->setText(m_cfg.db().name);
+    ui->hostname->setText(m_cfg.db().specs.hostname);
+    ui->databaseName->setText(m_cfg.db().specs.databaseName);
 }
 
 void MainWindow::start()
