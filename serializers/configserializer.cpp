@@ -3,7 +3,7 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonArray>
-
+#include<QDebug>
 namespace detail {
 
 st::DB dbFromJson(const QJsonObject &json)
@@ -24,7 +24,7 @@ st::DB dbFromJson(const QJsonObject &json)
       };
 }
 
-QJsonObject toJson(const st::DB &db)
+QJsonObject dbToJson(const st::DB &db)
 {
     auto json = QJsonObject();
 
@@ -52,7 +52,7 @@ st::QueryDef querDefFromJson(const QJsonObject &json)
     return q;
 }
 
-QJsonObject toJson(const st::QueryDef &qd)
+QJsonObject querDefToJson(const st::QueryDef &qd)
 {
     auto json = QJsonObject();
 
@@ -74,6 +74,19 @@ st::Configuration cfgFromJson(const QJsonObject &json)
     return cfg;
 }
 
+QJsonObject cfgToJson(const st::Configuration &cfg)
+{
+    auto json = QJsonObject();
+
+    json["db"] = detail::dbToJson(cfg.db());
+    auto ar = QJsonArray();
+    for (const auto &q : cfg.queries())
+        ar.append(detail::querDefToJson(q));
+    json["queries"] = ar;
+
+    return json;
+}
+
 } // namespace detail
 
 namespace st
@@ -83,7 +96,8 @@ Configuration ConfigSerializer::openConfiguration(const QString &filename)
 {
     auto loadFile = QFile(filename);
 
-    if (!loadFile.open(QIODevice::ReadOnly)) {
+    if (!loadFile.open(QIODevice::ReadOnly))
+    {
         qWarning("Couldn't open save file.");
         return {};
     }
@@ -94,6 +108,22 @@ Configuration ConfigSerializer::openConfiguration(const QString &filename)
     auto cfg = detail::cfgFromJson(doc.object());
 
     return cfg;
+}
+
+bool ConfigSerializer::saveConfiguration(const Configuration &cfg, const QString &filename)
+{
+    auto saveFile = QFile(filename);
+
+    if (!saveFile.open(QIODevice::WriteOnly))
+    {
+        qWarning("Couldn't open save file.");
+        return false;
+    }
+
+    auto json = detail::cfgToJson(cfg);
+    saveFile.write(QJsonDocument(json).toJson(QJsonDocument::JsonFormat::Indented));
+
+    return true;
 }
 
 } // namespace st

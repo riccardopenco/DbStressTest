@@ -101,7 +101,44 @@ void MainWindow::loadConfiguration()
 
 void MainWindow::saveConfiguration()
 {
-
+    if (!m_cfg.isValid())
+    {
+        QMessageBox msg;
+        msg.setIcon(QMessageBox::Critical);
+        msg.setText(tr("L'attuale configurazione non è valida."));
+        msg.setStandardButtons(QMessageBox::Ok);
+        msg.exec();
+        return;
+    }
+    auto fileName = QFileDialog::getSaveFileName(this,
+                                                 tr("Open File"),
+                                                 QString(),
+                                                 tr("DbStressTest configuration (*.json *.cfg)"));
+    if (fileName.isEmpty())
+        return;
+    if (!fileName.endsWith(".json", Qt::CaseInsensitive)
+        && !fileName.endsWith(".cfg", Qt::CaseInsensitive))
+    {
+        fileName = fileName.append(".json");
+    }
+    if (st::ConfigSerializer::saveConfiguration(m_cfg, fileName))
+    {
+        QMessageBox msg;
+        msg.setIcon(QMessageBox::Information);
+        msg.setText(tr("Configurazione salvata correttamente."));
+        msg.setStandardButtons(QMessageBox::Ok);
+        msg.exec();
+        return;
+    }
+    else
+    {
+        QMessageBox msg;
+        msg.setIcon(QMessageBox::Critical);
+        msg.setText(tr("Non è stato possibile salvare la configurazione."));
+        msg.setStandardButtons(QMessageBox::Ok);
+        msg.exec();
+        return;
+    }
 }
 
 void MainWindow::setConfiguration(st::Configuration cfg)
@@ -128,9 +165,12 @@ void MainWindow::changeConnection()
     qDeleteAll(m_workers);
     m_workers.clear();
 
-    SqlConnectionDialog d;
+    auto d = SqlConnectionDialog(st::DBManager::getDb());
     if (d.exec() == QDialog::Rejected)
         return;
+    auto db = d.db();
+    m_cfg.setDb(db);
+    st::DBManager::setDb(std::move(db));
 }
 
 void MainWindow::start()

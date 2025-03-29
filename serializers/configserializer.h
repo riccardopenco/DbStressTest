@@ -40,6 +40,7 @@ class ConfigSerializer
 {
 public:
     static Configuration openConfiguration(const QString &filename);
+    static bool saveConfiguration(const Configuration &cfg, const QString &filename);
 };
 
 } // namespace st
