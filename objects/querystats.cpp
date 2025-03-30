@@ -1,13 +1,8 @@
 #include "querystats.h"
 
-//QueryStats::QueryStats(QObject *parent) :
-//    QObject(parent)
-//{
-//}
-
-QueryStats::QueryStats(const QString &query/*, QObject *parent*/) :
-//    QObject(parent),
-    m_query{query}
+QueryStats::QueryStats(const QString &name, const QString &sql)
+    : m_queryName{name}
+    , m_querySql{sql}
 {
 }
 
@@ -30,14 +25,14 @@ qint64 QueryStats::fetchDurationMs() const
     return m_fetchStartTime.msecsTo(m_fetchEndTime);
 }
 
-QString QueryStats::query() const
+QString QueryStats::queryName() const
 {
-    return m_query;
+    return m_queryName;
 }
 
-void QueryStats::setQuery(const QString &query)
+void QueryStats::setQueryName(const QString &name)
 {
-    m_query = query;
+    m_queryName = name;
 }
 
 QDateTime QueryStats::execStartTime() const

@@ -42,19 +42,19 @@ public:
     void clear();
     void clearStats();
     bool appendQuery(const Query &query);
+    bool updateQuery(const Query &query);
+    bool removeQuery(int row);
     bool addResult(const QueryStats &result);
 
     Query getToRunAt(int row);
     Query at(int row) const;
-//    Query at(const QString &query) const;
-    int rowFor(const QString &query) const;
+    //    Query at(const QString &name) const;
+    int rowFor(const QString &name) const;
 
     QList<Query> queryList() const;
 
 
 private:
-    int m_rowCount{0};
-
     QMap<int, Query> m_queries;
     QMap<QString, int> m_indexes;
     QList<int> m_runningQueries;

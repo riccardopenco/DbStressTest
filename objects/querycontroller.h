@@ -13,7 +13,7 @@ public:
     explicit QueryController(QObject *parent = 0);
     ~QueryController();
 
-    void process(const QString &query);
+    void process(const QString &name, const QString &sql);
     bool isRunning() const;
 
 signals:
@@ -25,7 +25,7 @@ signals:
     void failed();
     void running();
     void stopped();
-    void exec(const QString &);
+    void exec(const QString &, const QString &);
     void resultReady(const QueryStats &);
 
 public slots:

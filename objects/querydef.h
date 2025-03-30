@@ -35,7 +35,10 @@ public:
     QString typeDescr() const;
     void setType(Type newType);
 
+    bool isValid() const;
+
     static Type typeFromDescr(const QString &typeDescr);
+    static QStringList allTypeDescr();
 
 private:
     QString m_name;

@@ -5,18 +5,10 @@ Query::Query(st::QueryDef q)
 {
 }
 
-// Query::Query(const QString &query, const QString &name) :
-//     m_query{query},
-//     m_name{name}
-// {
-// }
-
-// Query::Query(Type type, const QString &query, const QString &name) :
-//     m_type{type},
-//     m_query{query},
-//     m_name{name}
-// {
-// }
+st::QueryDef Query::queryDef() const
+{
+    return m_query;
+}
 
 st::QueryDef::Type Query::type() const
 {
@@ -33,7 +25,7 @@ QString Query::typeDescription() const
 //     m_type = type;
 // }
 
-QString Query::query() const
+QString Query::sql() const
 {
     return m_query.sql();
 }

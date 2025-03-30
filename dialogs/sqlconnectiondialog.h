@@ -24,7 +24,7 @@ private:
 
     void setName(const QString &name) const;
     void setDriverName(const QString &driverName) const;
-    void setConnectionOptions(const QString &connectionOptions) const;
+    void setConnectOptions(const QString &connectionOptions) const;
     void setDatabaseName(const QString &databaseName) const;
     void setUsername(const QString &username) const;
     void setPassword(const QString &password) const;
@@ -33,7 +33,7 @@ private:
 
     QString name() const;
     QString driverName() const;
-    QString connectionOptions() const;
+    QString connectOptions() const;
     QString databaseName() const;
     QString username() const;
     QString password() const;

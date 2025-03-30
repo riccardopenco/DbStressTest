@@ -31,7 +31,7 @@ QString QueryWorker::connectionName() const
     return m_connectionName;
 }
 
-void QueryWorker::process(const QString &query)
+void QueryWorker::process(const QString &name, const QString &sql)
 {
     if (m_query == nullptr)
     {
@@ -56,11 +56,11 @@ void QueryWorker::process(const QString &query)
         m_query->setForwardOnly(true);
     }
     emit running();
-    QueryStats result{query};
-    m_query->prepare(query);
+    auto result = QueryStats(name, sql);
+    m_query->prepare(sql);
     emit execStarted();
     result.setExecStartTime(QDateTime::currentDateTime());
-    bool success{m_query->exec()};
+    auto success = m_query->exec();
     result.setExecEndTime(QDateTime::currentDateTime());
     emit execFinished();
     result.setSuccess(success);
@@ -70,9 +70,9 @@ void QueryWorker::process(const QString &query)
         emit succeeded();
         if (m_query->isSelect())
         {
-            int rows{0};
-            int singleWeight{0};
-            int weight{0};
+            auto rows = 0;
+            auto singleWeight = 0;
+            auto weight = 0;
 
             result.setFetchStartTime(QDateTime::currentDateTime());
             emit fetchStarted();

@@ -96,12 +96,12 @@
                <string>Opzioni</string>
               </property>
               <property name="buddy">
-               <cstring>connectionOptions</cstring>
+               <cstring>connectOptions</cstring>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="connectionOptions"/>
+             <widget class="QLineEdit" name="connectOptions"/>
             </item>
            </layout>
           </item>
@@ -290,7 +290,7 @@
  </widget>
  <tabstops>
   <tabstop>driver</tabstop>
-  <tabstop>connectionOptions</tabstop>
+  <tabstop>connectOptions</tabstop>
   <tabstop>databaseName</tabstop>
   <tabstop>username</tabstop>
   <tabstop>password</tabstop>

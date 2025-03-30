@@ -10,29 +10,22 @@
 class Query
 {
 public:
-    enum class Type
-    {
-        Generic,
-        Performance,
-        Bandwidth
-    };
-
     Query() = default;
     Query(const Query &) = default;
     Query(Query &&) = default;
     explicit Query(st::QueryDef q);
-    // explicit Query(const QString &query = {}, const QString &name = {});
-    // Query(Type type, const QString &query = {}, const QString &name = {});
     ~Query() = default;
 
     Query &operator=(const Query &) = default;
     Query &operator=(Query &&) = default;
 
+    st::QueryDef queryDef() const;
+
     st::QueryDef::Type type() const;
     QString typeDescription() const;
     // void setType(const Type &type);
 
-    QString query() const;
+    QString sql() const;
     // void setQuery(const QString &query);
 
     QString name() const;
@@ -55,9 +48,6 @@ public:
 
 private:
     st::QueryDef m_query;
-    // Type m_type{Type::Generic};
-    // QString m_query{};
-    // QString m_name{};
     QList<QueryStats> m_stats{};
 
     int m_successCount{0};

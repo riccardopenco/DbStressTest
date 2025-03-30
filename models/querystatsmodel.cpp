@@ -16,7 +16,7 @@ QueryStatsModel::~QueryStatsModel()
 
 int QueryStatsModel::rowCount(const QModelIndex &/*parent*/) const
 {
-    return m_rowCount;
+    return m_indexes.size();
 }
 
 int QueryStatsModel::columnCount(const QModelIndex &/*parent*/) const
@@ -32,122 +32,56 @@ QVariant QueryStatsModel::data(const QModelIndex &index, int role) const
             && role != Qt::ForegroundRole)
         return {};
 
-    int row{index.row()};
-    Query q{m_queries.value(row)};
+    auto row = index.row();
+    auto q = m_queries.value(row);
     ModelColumn col = static_cast<ModelColumn>(index.column());
 
 //    const auto display = [](auto value){ QLocale locale; locale.setNumberOptions(0); return locale.toString(value); };
     const auto display = [](auto value){ return value; };
-
-    QVariant result{};
 
     if (role == Qt::DisplayRole)
     {
         auto count = static_cast<int>(m_runningQueries.count(row));
         switch (col)
         {
-        case ModelColumn::QueryId:
-            result = index.row();
-            break;
-        case ModelColumn::Type:
-            result = q.typeDescription();
-            break;
-        case ModelColumn::Name:
-            result = q.name();
-            break;
-        case ModelColumn::Status:
-            result = count > 0 ? tr("In esecuzione (%1)").arg(count) : QString();
-            break;
-        case ModelColumn::RunCount:
-            result = q.runCount();
-            break;
-        case ModelColumn::SuccessCount:
-            result = q.successCount();
-            break;
-        case ModelColumn::FailCount:
-            result = q.failCount();
-            break;
-        case ModelColumn::TotalExecTimeMs:
-            result = display(q.totalExecTimeMs());
-            break;
-        case ModelColumn::TotalFetchTimeMs:
-            result = display(q.totalFetchTimeMs());
-            break;
-        case ModelColumn::AverageExecTimeMs:
-            result = display(q.averageExecTimeMs());
-            break;
-        case ModelColumn::AverageFetchTimeMs:
-            result = display(q.averageFetchTimeMs());
-            break;
-        case ModelColumn::RowCount:
-            result = display(q.rowCount());
-            break;
-        case ModelColumn::AffectedRows:
-            result = display(q.affectedRowsCount());
-            break;
-        case ModelColumn::Weight:
-            result = display(q.weight());
-            break;
-        case ModelColumn::Query:
-            result = q.query();
-            break;
-        case ModelColumn::LastColumn:
-            result = QString();
-            break;
+        case ModelColumn::QueryId: return index.row();
+        case ModelColumn::Type: return q.typeDescription();
+        case ModelColumn::Name: return q.name();
+        case ModelColumn::Status: return count > 0 ? tr("In esecuzione (%1)").arg(count) : QString();
+        case ModelColumn::RunCount: return q.runCount();
+        case ModelColumn::SuccessCount: return q.successCount();
+        case ModelColumn::FailCount: return q.failCount();
+        case ModelColumn::TotalExecTimeMs: return display(q.totalExecTimeMs());
+        case ModelColumn::TotalFetchTimeMs: return display(q.totalFetchTimeMs());
+        case ModelColumn::AverageExecTimeMs: return display(q.averageExecTimeMs());
+        case ModelColumn::AverageFetchTimeMs: return display(q.averageFetchTimeMs());
+        case ModelColumn::RowCount: return display(q.rowCount());
+        case ModelColumn::AffectedRows: return display(q.affectedRowsCount());
+        case ModelColumn::Weight: return display(q.weight());
+        case ModelColumn::Query: return q.sql();
+        case ModelColumn::LastColumn: return QString();
         }
     }
     else if (role == Qt::TextAlignmentRole)
     {
         switch (col)
         {
-        case ModelColumn::QueryId:
-            result = Qt::AlignCenter;
-            break;
-        case ModelColumn::Type:
-            result = QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
-            break;
-        case ModelColumn::Name:
-            result = QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
-            break;
-        case ModelColumn::Query:
-            result = QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
-            break;
-        case ModelColumn::Status:
-            result = QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
-            break;
-        case ModelColumn::RunCount:
-            result = Qt::AlignCenter;
-            break;
-        case ModelColumn::SuccessCount:
-            result = Qt::AlignCenter;
-            break;
-        case ModelColumn::FailCount:
-            result = Qt::AlignCenter;
-            break;
-        case ModelColumn::TotalExecTimeMs:
-            result = QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
-            break;
-        case ModelColumn::TotalFetchTimeMs:
-            result = QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
-            break;
-        case ModelColumn::AverageExecTimeMs:
-            result = QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
-            break;
-        case ModelColumn::AverageFetchTimeMs:
-            result = QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
-            break;
-        case ModelColumn::RowCount:
-            result = QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
-            break;
-        case ModelColumn::AffectedRows:
-            result = QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
-            break;
-        case ModelColumn::Weight:
-            result = QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
-            break;
-        case ModelColumn::LastColumn:
-            result = QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
-            break;
+        case ModelColumn::QueryId: return Qt::AlignCenter;
+        case ModelColumn::Type: return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
+        case ModelColumn::Name: return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
+        case ModelColumn::Query: return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
+        case ModelColumn::Status: return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
+        case ModelColumn::RunCount: return Qt::AlignCenter;
+        case ModelColumn::SuccessCount: return Qt::AlignCenter;
+        case ModelColumn::FailCount: return Qt::AlignCenter;
+        case ModelColumn::TotalExecTimeMs: return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
+        case ModelColumn::TotalFetchTimeMs: return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
+        case ModelColumn::AverageExecTimeMs: return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
+        case ModelColumn::AverageFetchTimeMs: return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
+        case ModelColumn::RowCount: return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
+        case ModelColumn::AffectedRows: return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
+        case ModelColumn::Weight: return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
+        case ModelColumn::LastColumn: return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
         }
     }
     else if (role == Qt::SizeHintRole)
@@ -155,62 +89,30 @@ QVariant QueryStatsModel::data(const QModelIndex &index, int role) const
         QFontMetrics fm(qApp->font());
         switch (col)
         {
-        case ModelColumn::QueryId:
-            result = QVariant();
-            break;
-        case ModelColumn::Type:
-            result = QVariant();
-            break;
-        case ModelColumn::Name:
-            result = QVariant();
-            break;
-        case ModelColumn::Status:
-            result = QSize(fm.horizontalAdvance("WIn esecuzione (99)W"), fm.height());
-            break;
-        case ModelColumn::RunCount:
-            result = QVariant();
-            break;
-        case ModelColumn::SuccessCount:
-            result = QVariant();
-            break;
-        case ModelColumn::FailCount:
-            result = QVariant();
-            break;
-        case ModelColumn::TotalExecTimeMs:
-            result = QVariant();
-            break;
-        case ModelColumn::TotalFetchTimeMs:
-            result = QVariant();
-            break;
-        case ModelColumn::AverageExecTimeMs:
-            result = QVariant();
-            break;
-        case ModelColumn::AverageFetchTimeMs:
-            result = QVariant();
-            break;
-        case ModelColumn::RowCount:
-            result = QVariant();
-            break;
-        case ModelColumn::AffectedRows:
-            result = QVariant();
-            break;
-        case ModelColumn::Weight:
-            result = QSize(fm.horizontalAdvance("WWW.WWW.WWW"), fm.height());
-            break;
-        case ModelColumn::Query:
-            result = QSize(fm.horizontalAdvance("SELECT * FROM TABLE ORDER BY FIELD"), fm.height());
-            break;
-        case ModelColumn::LastColumn:
-            result = QVariant();
-            break;
+        case ModelColumn::QueryId: return {};
+        case ModelColumn::Type: return {};
+        case ModelColumn::Name: return {};
+        case ModelColumn::Status: return QSize(fm.horizontalAdvance("WIn esecuzione (99)W"), fm.height());
+        case ModelColumn::RunCount: return {};
+        case ModelColumn::SuccessCount: return {};
+        case ModelColumn::FailCount: return {};
+        case ModelColumn::TotalExecTimeMs: return {};
+        case ModelColumn::TotalFetchTimeMs: return {};
+        case ModelColumn::AverageExecTimeMs: return {};
+        case ModelColumn::AverageFetchTimeMs: return {};
+        case ModelColumn::RowCount: return {};
+        case ModelColumn::AffectedRows: return {};
+        case ModelColumn::Weight: return QSize(fm.horizontalAdvance("WWW.WWW.WWW"), fm.height());
+        case ModelColumn::Query: return QSize(fm.horizontalAdvance("SELECT * FROM TABLE ORDER BY FIELD"), fm.height());
+        case ModelColumn::LastColumn: return {};
         }
     }
     else if (role == Qt::ForegroundRole)
     {
         if (q.failCount() > 0)
-            result = QBrush(Qt::red);
+            return QBrush(Qt::red);
     }
-    return result;
+    return {};
 }
 
 QVariant QueryStatsModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -223,40 +125,24 @@ QVariant QueryStatsModel::headerData(int section, Qt::Orientation orientation, i
 
     switch (col)
     {
-    case ModelColumn::QueryId:
-        return tr("ID");
-    case ModelColumn::Type:
-        return tr("Tipologia");
-    case ModelColumn::Name:
-        return tr("Nome");
-    case ModelColumn::Query:
-        return tr("Query");
-    case ModelColumn::Status:
-        return tr("Stato");
-    case ModelColumn::RunCount:
-        return tr("Numero\r\nesecuzioni");
-    case ModelColumn::SuccessCount:
-        return tr("Numero\r\nsuccessi");
-    case ModelColumn::FailCount:
-        return tr("Numero\r\nErrori");
-    case ModelColumn::TotalExecTimeMs:
-        return tr("Tempo totale\r\nesecuzione (ms)");
-    case ModelColumn::TotalFetchTimeMs:
-        return tr("Tempo totale\r\ntrasferimento (ms)");
-    case ModelColumn::AverageExecTimeMs:
-        return tr("Tempo medio\r\nesecuzione (ms)");
-    case ModelColumn::AverageFetchTimeMs:
-        return tr("Tempo medio\r\ntrasferimento (ms)");
-    case ModelColumn::RowCount:
-        return tr("Numero righe\r\n(ultimo run)");
-    case ModelColumn::AffectedRows:
-        return tr("Righe coinvolte\r\n(ultimo run)");
-    case ModelColumn::Weight:
-        return tr("Peso in bytes\r\n(stimato)");
-    case ModelColumn::LastColumn:
-        return QString();
+    case ModelColumn::QueryId: return tr("ID");
+    case ModelColumn::Type: return tr("Tipologia");
+    case ModelColumn::Name: return tr("Nome");
+    case ModelColumn::Query: return tr("Query");
+    case ModelColumn::Status: return tr("Stato");
+    case ModelColumn::RunCount: return tr("Numero\nesecuzioni");
+    case ModelColumn::SuccessCount: return tr("Numero\nsuccessi");
+    case ModelColumn::FailCount: return tr("Numero\nErrori");
+    case ModelColumn::TotalExecTimeMs: return tr("Tempo totale\nesecuzione (ms)");
+    case ModelColumn::TotalFetchTimeMs: return tr("Tempo totale\ntrasferimento (ms)");
+    case ModelColumn::AverageExecTimeMs: return tr("Tempo medio\nesecuzione (ms)");
+    case ModelColumn::AverageFetchTimeMs: return tr("Tempo medio\ntrasferimento (ms)");
+    case ModelColumn::RowCount: return tr("Numero righe\n(ultimo run)");
+    case ModelColumn::AffectedRows: return tr("Righe coinvolte\n(ultimo run)");
+    case ModelColumn::Weight: return tr("Peso in bytes\n(stimato)");
+    case ModelColumn::LastColumn: return {};
     }
-    return QString();
+    return {};
 }
 
 void QueryStatsModel::clear()
@@ -264,7 +150,6 @@ void QueryStatsModel::clear()
     beginResetModel();
     m_queries.clear();
     m_indexes.clear();
-    m_rowCount = 0;
     endResetModel();
 }
 
@@ -278,19 +163,48 @@ void QueryStatsModel::clearStats()
 
 bool QueryStatsModel::appendQuery(const Query &query)
 {
-    if (m_indexes.contains(query.query()))
+    if (m_indexes.contains(query.name()))
         return false;
-    beginInsertRows(QModelIndex(), m_rowCount, m_rowCount);
-    m_queries.insert(m_rowCount, query);
-    m_indexes.insert(query.query(), m_rowCount);
-    ++m_rowCount;
+    const auto cnt = rowCount();
+    beginInsertRows(QModelIndex(), cnt, cnt);
+    m_queries.insert(cnt, query);
+    m_indexes.insert(query.name(), cnt);
     endInsertRows();
+    return true;
+}
+
+bool QueryStatsModel::updateQuery(const Query &query)
+{
+    const auto row = rowFor(query.name());
+    beginResetModel();
+    m_queries.insert(row, query);
+    endResetModel();
+    return true;
+}
+
+bool QueryStatsModel::removeQuery(int row)
+{
+    beginRemoveRows({}, row, row);
+    // I have to rebuild the indexes structure
+    // IT'S UGLY! Yes, I know that...
+    const auto name = m_queries.value(row).name();  // get the name of the query
+    const auto cnt = rowCount();
+    for (auto id = row + 1; id < cnt; ++id)
+    {
+        auto q = m_queries.value(id);
+        m_queries.insert(id - 1, q); // move the queries 1 row up
+        m_indexes.insert(q.name(), id -1); // and update the corresponding index
+    }
+    m_indexes.remove(name); // remove the index for the removed query
+    m_queries.remove(cnt -1); // finally remove the last query (copy of the one moved at position cnt - 2
+
+    endRemoveRows();
     return true;
 }
 
 bool QueryStatsModel::addResult(const QueryStats &result)
 {
-    int row = rowFor(result.query());
+    int row = rowFor(result.queryName());
     if (row == -1)
         return false;
 
@@ -312,9 +226,9 @@ Query QueryStatsModel::at(int row) const
     return m_queries.value(row);
 }
 
-int QueryStatsModel::rowFor(const QString &query) const
+int QueryStatsModel::rowFor(const QString &name) const
 {
-    return m_indexes.value(query, -1);
+    return m_indexes.value(name, -1);
 }
 
 QList<Query> QueryStatsModel::queryList() const

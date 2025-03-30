@@ -31,11 +31,11 @@ QueryController::~QueryController()
     m_workerThread.deleteLater();
 }
 
-void QueryController::process(const QString &query)
+void QueryController::process(const QString &name, const QString &sql)
 {
-    if (query.isEmpty())
+    if (sql.isEmpty())
         return;
-    emit exec(query);
+    emit exec(name, sql);
 }
 
 bool QueryController::isRunning() const

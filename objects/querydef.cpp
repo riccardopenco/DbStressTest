@@ -1,5 +1,7 @@
 #include "querydef.h"
 
+#include <QStringList>
+
 namespace st
 {
 
@@ -48,6 +50,21 @@ QueryDef::Type QueryDef::type() const
 void QueryDef::setType(Type newType)
 {
     m_type = newType;
+}
+
+bool QueryDef::isValid() const
+{
+    return !m_name.isEmpty() && !m_sql.isEmpty();
+}
+
+QStringList QueryDef::allTypeDescr()
+{
+    return
+      {
+        QStringLiteral("Generic"),
+        QStringLiteral("Performance"),
+        QStringLiteral("Bandwidth"),
+      };
 }
 
 QueryDef::Type QueryDef::typeFromDescr(const QString &typeDescr)

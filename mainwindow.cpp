@@ -6,6 +6,7 @@
 #include "helpers/xlsxhelper.h"
 
 #include "dialogs/sqlconnectiondialog.h"
+#include "dialogs/queryeditdialog.h"
 #include "objects/querystats.h"
 #include "delegates/numericdelegate.h"
 #include "xlsxdocument.h"
@@ -42,6 +43,9 @@ void MainWindow::setupForm()
     m_queryProxyModel.setCheckableColumns({checkableColumn});
     ui->tableView->verticalHeader()->hide();
     ui->tableView->setAlternatingRowColors(true);
+    ui->tableView->setSelectionBehavior(QAbstractItemView::SelectionBehavior::SelectRows);
+    ui->tableView->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
+    ui->tableView->horizontalHeader()->setStretchLastSection(true);
     const QList<int> numericColumns{
       {
         static_cast<int>(QueryStatsModel::ModelColumn::TotalExecTimeMs),
@@ -73,6 +77,10 @@ void MainWindow::setupForm()
     connect(ui->buttonClearStats, &QPushButton::clicked, &m_queryModel, &QueryStatsModel::clearStats);
     connect(ui->buttonStatsToExcel, &QPushButton::clicked, this, &MainWindow::extractStatsToXlsx);
     connect(ui->buttonCheckAll, &QPushButton::toggled, this, &MainWindow::checkUncheckAllQueries);
+    connect(ui->buttonAddQuery, &QPushButton::clicked, this, &MainWindow::addQuery);
+    connect(ui->buttonEditQuery, &QPushButton::clicked, this, &MainWindow::editQuery);
+    connect(ui->buttonRemoveQuery, &QPushButton::clicked, this, &MainWindow::removeQuery);
+
     connect(&m_timer, &QTimer::timeout, this, [this]() { m_endTime = QDateTime::currentDateTime(); updateDuration(); });
 
     ui->buttonCheckAll->setChecked(true);
@@ -209,7 +217,10 @@ void MainWindow::start()
     m_running = true;
     m_stopped = false;
     for (int i = 0; i < m_workerCount; ++i)
-        m_workers.at(i)->process(nextQuery());
+    {
+        const auto q = nextQuery();
+        m_workers.at(i)->process(q.name(), q.sql());
+    }
 }
 
 void MainWindow::pause()
@@ -220,6 +231,46 @@ void MainWindow::pause()
 void MainWindow::stop()
 {
     m_stopped = true;
+}
+
+void MainWindow::addQuery()
+{
+    auto d = QueryEditDialog();
+    if (d.exec() == QDialog::Rejected)
+        return;
+    auto q = d.query();
+    if (!q.isValid())
+        return;
+
+    m_queryModel.appendQuery(Query(q));
+    ui->tableView->resizeColumnsToContents();
+}
+
+void MainWindow::editQuery()
+{
+    const auto idx = ui->tableView->currentIndex();
+    if (!idx.isValid())
+        return;
+
+    const auto query = m_queryModel.at(idx.row()).queryDef();
+    auto d = QueryEditDialog(query);
+    if (d.exec() == QDialog::Rejected)
+        return;
+    auto q = d.query();
+    if (!q.isValid())
+        return;
+
+    m_queryModel.updateQuery(Query(q));
+    ui->tableView->resizeColumnsToContents();
+}
+
+void MainWindow::removeQuery()
+{
+    const auto idx = ui->tableView->currentIndex();
+    if (!idx.isValid())
+        return;
+
+    m_queryModel.removeQuery(idx.row());
 }
 
 void MainWindow::workedStarted()
@@ -267,8 +318,9 @@ void MainWindow::handleResult(const QueryStats &result)
 {
     m_queryModel.addResult(result);
 
-    const QString query{nextQuery()};
-    if (query.isEmpty())
+    const auto query = nextQuery();
+    const auto sql = query.sql();
+    if (sql.isEmpty())
     {
         if (m_workersRunning == 0)
         {
@@ -282,7 +334,7 @@ void MainWindow::handleResult(const QueryStats &result)
     else
     {
         QueryController *worker = qobject_cast<QueryController *>(sender());
-        worker->process(query);
+        worker->process(query.name(), sql);
     }
 }
 
@@ -436,17 +488,13 @@ void MainWindow::prepareQueries()
     ui->tableView->resizeColumnsToContents();
 }
 
-QString MainWindow::nextQuery()
+Query MainWindow::nextQuery()
 {
-    QString next{};
-
     if (m_stopped
             || m_queriesToRun.isEmpty())
-        return next;
+        return {};
 
-    next = m_queryModel.getToRunAt(m_queriesToRun.takeFirst()).query();
-
-    return next;
+    return m_queryModel.getToRunAt(m_queriesToRun.takeFirst());
 }
 
 void MainWindow::about()

@@ -20,6 +20,6 @@ int main(int argc, char *argv[])
     a.setOrganizationDomain(VER_COMPANYDOMAIN_STR);
 
     MainWindow w;
-    w.show();
+    w.showMaximized();
     return a.exec();
 }

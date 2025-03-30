@@ -28,7 +28,7 @@ signals:
     void resultReady(const QueryStats &);
 
 public slots:
-    void process(const QString &query);
+    void process(const QString &name, const QString &sql);
 
 private:
     static int m_connectionId;

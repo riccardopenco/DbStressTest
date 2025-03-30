@@ -36,6 +36,10 @@ private slots:
     void start();
     void pause();
     void stop();
+    void addQuery();
+    void editQuery();
+    void removeQuery();
+
     void workedStarted();
     void workerFinished();
     void execStarted();
@@ -57,8 +61,8 @@ private:
     void prepareWorkers();
     void addWorker();
     void prepareQueries();
-
-    QString nextQuery();
+    
+    Query nextQuery();
 
     void about();
 

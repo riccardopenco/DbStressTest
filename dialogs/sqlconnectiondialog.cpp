@@ -36,7 +36,7 @@ st::DBConnectionSpecs SqlConnectionDialog::specs() const
     return
       {
         .type                       = driverName(),
-        .connectOptions             = connectionOptions(),
+        .connectOptions             = connectOptions(),
         .hostname                   = hostname(),
         .port                       = port(),
         .databaseName               = databaseName(),
@@ -59,9 +59,9 @@ void SqlConnectionDialog::setDriverName(const QString &driverName) const
         ui->driver->setCurrentIndex(ui->driver->findText(driverName));
 }
 
-void SqlConnectionDialog::setConnectionOptions(const QString &connectionOptions) const
+void SqlConnectionDialog::setConnectOptions(const QString &connectionOptions) const
 {
-    ui->connectionOptions->setText(connectionOptions);
+    ui->connectOptions->setText(connectionOptions);
 }
 
 void SqlConnectionDialog::setDatabaseName(const QString &databaseName) const
@@ -99,9 +99,9 @@ QString SqlConnectionDialog::driverName() const
     return ui->driver->currentText();
 }
 
-QString SqlConnectionDialog::connectionOptions() const
+QString SqlConnectionDialog::connectOptions() const
 {
-    return ui->connectionOptions->text();
+    return ui->connectOptions->text();
 }
 
 QString SqlConnectionDialog::databaseName() const
@@ -191,6 +191,7 @@ void SqlConnectionDialog::setupForm(const st::DB &db)
     drivers.removeAll("QPSQL7");
     drivers.removeAll("QTDS7");
 
+    ui->driver->setSizeAdjustPolicy(QComboBox::SizeAdjustPolicy::AdjustToContents);
     ui->driver->addItems(drivers);
 
     setUiParameters(db);
@@ -201,7 +202,7 @@ void SqlConnectionDialog::setUiParameters(const st::DB &db)
     ui->name->setText(db.name);
 
     setDriverName(db.specs.type);
-    setConnectionOptions(db.specs.connectOptions);
+    setConnectOptions(db.specs.connectOptions);
     setHostname(db.specs.hostname);
     setPort(db.specs.port);
     setDatabaseName(db.specs.databaseName);
