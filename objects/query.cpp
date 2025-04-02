@@ -80,9 +80,9 @@ qint64 Query::averageFetchTimeMs() const
     return m_stats.avgFetchDurationMs();
 }
 
-int Query::rowCount() const
+int Query::rowsCount() const
 {
-    return m_rowCount;
+    return m_rowsCount;
 }
 
 int Query::affectedRowsCount() const
@@ -90,7 +90,7 @@ int Query::affectedRowsCount() const
     return m_affectedRowsCount;
 }
 
-int Query::weight()
+int Query::weight() const
 {
     return m_weight;
 }
@@ -102,7 +102,7 @@ void Query::appendResult(QueryTimings result)
     else
         ++m_failCount;
 
-    m_rowCount = result.rowCount();
+    m_rowsCount = result.rowCount();
     m_affectedRowsCount = result.affectedRows();
     m_weight += result.weight();
 
@@ -114,9 +114,14 @@ void Query::clearResults()
     m_stats.clear();
     m_successCount = 0;
     m_failCount = 0;
-    m_rowCount = 0;
+    m_rowsCount = 0;
     m_affectedRowsCount = 0;
     m_weight = 0;
+}
+
+const QueryStats &Query::stats() const
+{
+    return m_stats;
 }
 
 //void Query::appendResult(QueryStats &&result)

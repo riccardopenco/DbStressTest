@@ -107,7 +107,7 @@ qint64 QueryStats::avgFetchDurationMs() const
     return cnt == 0 ? 0 : totFetchDurationMs() / cnt;
 }
 
-double QueryStats::stdErrQueryDurationMs() const
+qint64 QueryStats::stdErrQueryDurationMs() const
 {
     const auto cnt = m_timings.size();
     const auto avg = avgQueryDurationMs();

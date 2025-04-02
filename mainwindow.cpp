@@ -402,11 +402,95 @@ void MainWindow::extractStatsToXlsx()
         }
     }
 
-    QXlsx::Document xlsx;
+    using namespace QXlsx;
+    Document xlsx;
+    // XlsxHelper::dumpModelToXlsxWithForegroundRole(xlsx, m_queryModel);
+    Format defaultFormat;
+    Format headerFormat;
 
-    XlsxHelper::dumpModelToXlsxWithForegroundRole(xlsx, m_queryModel);
+    defaultFormat.setFontName("Arial");
+    defaultFormat.setFontSize(10);
 
-    int row{m_queryModel.rowCount() + 2};
+    headerFormat = defaultFormat;
+    headerFormat.setFontBold(true);
+
+    auto row = 1;
+    auto col = 1;
+    xlsx.write(row, 5, tr("Tempo totale"), headerFormat);
+    xlsx.write(row, 6, tr("Tempo totale"), headerFormat);
+    xlsx.write(row, 7, tr("Tempo totale"), headerFormat);
+    xlsx.mergeCells(CellRange(row, 5, row, 7));
+    xlsx.write(row, 8, tr("Tempo minimo"), headerFormat);
+    xlsx.write(row, 9, tr("Tempo minimo"), headerFormat);
+    xlsx.write(row, 10, tr("Tempo minimo"), headerFormat);
+    xlsx.mergeCells(CellRange(row, 8, row, 10));
+    xlsx.write(row, 11, tr("Tempo massimo"), headerFormat);
+    xlsx.write(row, 12, tr("Tempo massimo"), headerFormat);
+    xlsx.write(row, 13, tr("Tempo massimo"), headerFormat);
+    xlsx.mergeCells(CellRange(row, 11, row, 13));
+    xlsx.write(row, 14, tr("Tempo medio"), headerFormat);
+    xlsx.write(row, 15, tr("Tempo medio"), headerFormat);
+    xlsx.write(row, 16, tr("Tempo medio"), headerFormat);
+    xlsx.mergeCells(CellRange(row, 14, row, 16));
+    xlsx.write(row, 17, tr("Errore"), headerFormat);
+    xlsx.write(row, 18, tr("Errore"), headerFormat);
+    xlsx.write(row, 19, tr("Errore"), headerFormat);
+    xlsx.mergeCells(CellRange(row, 17, row, 19));
+
+    xlsx.write(++row, col, tr("Nome"), headerFormat);
+    xlsx.write(row, ++col, tr("Tipo"), headerFormat);
+    xlsx.write(row, ++col, tr("N.ro OK"), headerFormat);
+    xlsx.write(row, ++col, tr("N.ro KO"), headerFormat);
+    xlsx.write(row, ++col, tr("somma"), headerFormat);
+    xlsx.write(row, ++col, tr("esecuzione"), headerFormat);
+    xlsx.write(row, ++col, tr("ricezione"), headerFormat);
+    xlsx.write(row, ++col, tr("somma"), headerFormat);
+    xlsx.write(row, ++col, tr("esecuzione"), headerFormat);
+    xlsx.write(row, ++col, tr("ricezione"), headerFormat);
+    xlsx.write(row, ++col, tr("somma"), headerFormat);
+    xlsx.write(row, ++col, tr("esecuzione"), headerFormat);
+    xlsx.write(row, ++col, tr("ricezione"), headerFormat);
+    xlsx.write(row, ++col, tr("somma"), headerFormat);
+    xlsx.write(row, ++col, tr("esecuzione"), headerFormat);
+    xlsx.write(row, ++col, tr("ricezione"), headerFormat);
+    xlsx.write(row, ++col, tr("somma"), headerFormat);
+    xlsx.write(row, ++col, tr("esecuzione"), headerFormat);
+    xlsx.write(row, ++col, tr("ricezione"), headerFormat);
+    xlsx.write(row, ++col, tr("N.ro righe"), headerFormat);
+    xlsx.write(row, ++col, tr("Righe coinvolte"), headerFormat);
+    xlsx.write(row, ++col, tr("Stima bytes"), headerFormat);
+    xlsx.write(row, ++col, tr("SQL"), headerFormat);
+
+    for (const auto &query : m_queryModel.queryList())
+    {
+        col = 1;
+        xlsx.write(++row, col, query.name(), defaultFormat);
+        xlsx.write(row, ++col, query.typeDescription(), defaultFormat);
+        xlsx.write(row, ++col, query.successCount(), defaultFormat);
+        xlsx.write(row, ++col, query.failCount(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().totQueryDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().totExecDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().totFetchDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().minQueryDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().minExecDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().minFetchDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().maxQueryDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().maxExecDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().maxFetchDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().avgQueryDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().avgExecDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().avgFetchDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().stdErrQueryDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().stdErrExecDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.stats().stdErrFetchDurationMs(), defaultFormat);
+        xlsx.write(row, ++col, query.rowsCount(), defaultFormat);
+        xlsx.write(row, ++col, query.affectedRowsCount(), defaultFormat);
+        xlsx.write(row, ++col, query.weight(), defaultFormat);
+        xlsx.write(row, ++col, query.sql(), defaultFormat);
+    }
+
+    // auto row = m_queryModel.rowCount() + 2;
+    ++row;
     xlsx.write(++row, 1, tr("Configurazione: ").append(m_cfg.db().name));
     xlsx.write(++row, 1, tr("Server: ").append(m_cfg.db().specs.hostname));
     xlsx.write(++row, 1, tr("Database: ").append(m_cfg.db().specs.databaseName));

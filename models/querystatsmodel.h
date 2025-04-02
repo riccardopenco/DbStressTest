@@ -48,11 +48,10 @@ public:
 
     Query getToRunAt(int row);
     Query at(int row) const;
-    //    Query at(const QString &name) const;
+    //Query at(const QString &name) const;
     int rowFor(const QString &name) const;
 
     QList<Query> queryList() const;
-
 
 private:
     QMap<int, Query> m_queries;

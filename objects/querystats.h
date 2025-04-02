@@ -28,8 +28,8 @@ public:
     qint64 avgQueryDurationMs() const;
     qint64 avgExecDurationMs() const;
     qint64 avgFetchDurationMs() const;
-
-    double stdErrQueryDurationMs() const;
+    
+    qint64 stdErrQueryDurationMs() const;
     qint64 stdErrExecDurationMs() const;
     qint64 stdErrFetchDurationMs() const;
 

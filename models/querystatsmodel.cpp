@@ -55,7 +55,7 @@ QVariant QueryStatsModel::data(const QModelIndex &index, int role) const
         case ModelColumn::TotalFetchTimeMs: return display(q.totalFetchTimeMs());
         case ModelColumn::AverageExecTimeMs: return display(q.averageExecTimeMs());
         case ModelColumn::AverageFetchTimeMs: return display(q.averageFetchTimeMs());
-        case ModelColumn::RowCount: return display(q.rowCount());
+        case ModelColumn::RowCount: return display(q.rowsCount());
         case ModelColumn::AffectedRows: return display(q.affectedRowsCount());
         case ModelColumn::Weight: return display(q.weight());
         case ModelColumn::Query: return q.sql();

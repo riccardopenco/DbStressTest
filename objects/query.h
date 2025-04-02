@@ -39,13 +39,13 @@ public:
     qint64 totalFetchTimeMs() const;
     qint64 averageExecTimeMs() const;
     qint64 averageFetchTimeMs() const;
-    int rowCount() const;
+    int rowsCount() const;
     int affectedRowsCount() const;
-    int weight();
+    int weight() const;
 
     void appendResult(QueryTimings result);
     void clearResults();
-//    void appendResult(QueryStats &&result);
+    const QueryStats &stats() const;
 
 private:
     st::QueryDef m_query;
@@ -53,7 +53,7 @@ private:
 
     int m_successCount{0};
     int m_failCount{0};
-    int m_rowCount{0};
+    int m_rowsCount{0};
     int m_affectedRowsCount{0};
     int m_weight{0};
 };
