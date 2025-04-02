@@ -95,7 +95,7 @@ int Query::weight()
     return m_weight;
 }
 
-void Query::appendResult(const QueryStats &result)
+void Query::appendResult(const QueryTimings &result)
 {
     m_stats.append(result);
     if (result.success())

@@ -103,7 +103,7 @@ QVariant QueryStatsModel::data(const QModelIndex &index, int role) const
         case ModelColumn::RowCount: return {};
         case ModelColumn::AffectedRows: return {};
         case ModelColumn::Weight: return QSize(fm.horizontalAdvance("WWW.WWW.WWW"), fm.height());
-        case ModelColumn::Query: return QSize(fm.horizontalAdvance("SELECT * FROM TABLE ORDER BY FIELD"), fm.height());
+        case ModelColumn::Query: return QSize(fm.horizontalAdvance("SELECT * FROM TABLE_WITH_QUITE_LONG_NAME ORDER BY SOME_FIELD, OTHER_FIELD;"), fm.height());
         case ModelColumn::LastColumn: return {};
         }
     }
@@ -202,7 +202,7 @@ bool QueryStatsModel::removeQuery(int row)
     return true;
 }
 
-bool QueryStatsModel::addResult(const QueryStats &result)
+bool QueryStatsModel::addResult(const QueryTimings &result)
 {
     int row = rowFor(result.queryName());
     if (row == -1)

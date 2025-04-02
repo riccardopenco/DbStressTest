@@ -1,21 +1,21 @@
-#ifndef QUERYSTATS_H
-#define QUERYSTATS_H
+#ifndef QUERYTIMINGS_H
+#define QUERYTIMINGS_H
 
 #include <QObject>
 #include <QString>
 #include <QDateTime>
 
-class QueryStats
+class QueryTimings
 {
 public:
-    explicit QueryStats(const QString &name, const QString &sql);
-    ~QueryStats();
+    explicit QueryTimings(const QString &name, const QString &sql);
+    ~QueryTimings();
 
-    QueryStats (const QueryStats &) = default;
-    QueryStats (QueryStats &&) = default;
+    QueryTimings (const QueryTimings &) = default;
+    QueryTimings (QueryTimings &&) = default;
 
-    QueryStats &operator =(const QueryStats &) = default;
-    QueryStats &operator =(QueryStats &&) = default;
+    QueryTimings &operator =(const QueryTimings &) = default;
+    QueryTimings &operator =(QueryTimings &&) = default;
 
     qint64 totalDurationMs() const;
     qint64 execDurationMs() const;
@@ -65,4 +65,4 @@ private:
 
 //Q_DECLARE_METATYPE(QueryStats)
 
-#endif // QUERYSTATS_H
+#endif // QUERYTIMINGS_H

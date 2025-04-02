@@ -29,7 +29,7 @@ set(SOURCES
     db/scopedtransaction.h db/scopedtransaction.cpp
     delegates/numericdelegate.h delegates/numericdelegate.cpp
     dialogs/sqlconnectiondialog.h dialogs/sqlconnectiondialog.cpp
-    objects/querystats.h objects/querystats.cpp
+    objects/querytimings.h objects/querytimings.cpp
     objects/queryworker.h objects/queryworker.cpp
     objects/querycontroller.h objects/querycontroller.cpp
     objects/query.h objects/query.cpp

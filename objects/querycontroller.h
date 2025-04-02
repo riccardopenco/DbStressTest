@@ -1,7 +1,7 @@
 #ifndef QUERYCONTROLLER_H
 #define QUERYCONTROLLER_H
 
-#include "querystats.h"
+#include "querytimings.h"
 
 #include <QObject>
 #include <QThread>
@@ -26,12 +26,12 @@ signals:
     void running();
     void stopped();
     void exec(const QString &, const QString &);
-    void resultReady(const QueryStats &);
+    void resultReady(const QueryTimings &);
 
 public slots:
     void workerStarted();
     void workerStopped();
-    void handleResult(const QueryStats &result);
+    void handleResult(const QueryTimings &result);
 
 private:
     QThread m_workerThread;

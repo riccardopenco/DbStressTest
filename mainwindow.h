@@ -3,7 +3,7 @@
 
 #include "objects/configuration.h"
 #include "objects/querycontroller.h"
-#include "objects/querystats.h"
+#include "objects/querytimings.h"
 #include "objects/query.h"
 
 #include "models/querystatsmodel.h"
@@ -48,7 +48,7 @@ private slots:
     void fetchFinished();
     void querySucceeded();
     void queryFailed();
-    void handleResult(const QueryStats &result);
+    void handleResult(const QueryTimings &result);
     void updateDuration();
     void setControlsEnabled(bool enabled);
     void disableControls();

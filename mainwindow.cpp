@@ -7,7 +7,7 @@
 
 #include "dialogs/sqlconnectiondialog.h"
 #include "dialogs/queryeditdialog.h"
-#include "objects/querystats.h"
+#include "objects/querytimings.h"
 #include "delegates/numericdelegate.h"
 #include "xlsxdocument.h"
 
@@ -37,7 +37,7 @@ void MainWindow::setupForm()
     ui->workerCount->setValue(m_workerCount);
     clearStatistics();
 
-    qRegisterMetaType<QueryStats>("QueryStats");
+    qRegisterMetaType<QueryTimings>("QueryStats");
 
     m_queryProxyModel.setSourceModel(&m_queryModel);
     m_queryProxyModel.setCheckableColumns({checkableColumn});
@@ -83,7 +83,7 @@ void MainWindow::setupForm()
 
     connect(&m_timer, &QTimer::timeout, this, [this]() { m_endTime = QDateTime::currentDateTime(); updateDuration(); });
 
-    ui->buttonCheckAll->setChecked(true);
+    ui->buttonCheckAll->setChecked(false);
 }
 
 void MainWindow::loadConfiguration()
@@ -314,7 +314,7 @@ void MainWindow::queryFailed()
     ui->failedCount->setText(QString::number(++m_failed));
 }
 
-void MainWindow::handleResult(const QueryStats &result)
+void MainWindow::handleResult(const QueryTimings &result)
 {
     m_queryModel.addResult(result);
 

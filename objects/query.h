@@ -2,7 +2,7 @@
 #define QUERY_H
 
 #include "querydef.h"
-#include "querystats.h"
+#include "querytimings.h"
 
 #include <QString>
 #include <QList>
@@ -42,13 +42,13 @@ public:
     int affectedRowsCount() const;
     int weight();
 
-    void appendResult(const QueryStats &result);
+    void appendResult(const QueryTimings &result);
     void clearResults();
 //    void appendResult(QueryStats &&result);
 
 private:
     st::QueryDef m_query;
-    QList<QueryStats> m_stats{};
+    QList<QueryTimings> m_stats{};
 
     int m_successCount{0};
     int m_failCount{0};

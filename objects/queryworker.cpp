@@ -56,7 +56,7 @@ void QueryWorker::process(const QString &name, const QString &sql)
         m_query->setForwardOnly(true);
     }
     emit running();
-    auto result = QueryStats(name, sql);
+    auto result = QueryTimings(name, sql);
     m_query->prepare(sql);
     emit execStarted();
     result.setExecStartTime(QDateTime::currentDateTime());

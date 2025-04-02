@@ -55,7 +55,7 @@ void QueryController::workerStopped()
     emit stopped();
 }
 
-void QueryController::handleResult(const QueryStats &result)
+void QueryController::handleResult(const QueryTimings &result)
 {
     emit resultReady(result);
 }

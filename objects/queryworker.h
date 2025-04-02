@@ -1,7 +1,7 @@
 #ifndef QUERYWORKER_H
 #define QUERYWORKER_H
 
-#include "querystats.h"
+#include "querytimings.h"
 
 #include <QObject>
 
@@ -25,7 +25,7 @@ signals:
     void failed();
     void running();
     void stopped();
-    void resultReady(const QueryStats &);
+    void resultReady(const QueryTimings &);
 
 public slots:
     void process(const QString &name, const QString &sql);
