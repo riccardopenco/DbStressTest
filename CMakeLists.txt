@@ -80,6 +80,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         serializers/dbserializer.h serializers/dbserializer.cpp
         serializers/configserializer.h serializers/configserializer.cpp
         dialogs/queryeditdialog.h dialogs/queryeditdialog.cpp dialogs/queryeditdialog.ui
+        objects/querystats.h objects/querystats.cpp
     )
 else()
     add_executable(DbStressTest

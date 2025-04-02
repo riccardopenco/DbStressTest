@@ -314,9 +314,9 @@ void MainWindow::queryFailed()
     ui->failedCount->setText(QString::number(++m_failed));
 }
 
-void MainWindow::handleResult(const QueryTimings &result)
+void MainWindow::handleResult(QueryTimings result)
 {
-    m_queryModel.addResult(result);
+    m_queryModel.addResult(std::move(result));
 
     const auto query = nextQuery();
     const auto sql = query.sql();

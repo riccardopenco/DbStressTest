@@ -48,7 +48,7 @@ private slots:
     void fetchFinished();
     void querySucceeded();
     void queryFailed();
-    void handleResult(const QueryTimings &result);
+    void handleResult(QueryTimings result);
     void updateDuration();
     void setControlsEnabled(bool enabled);
     void disableControls();

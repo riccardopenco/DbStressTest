@@ -202,13 +202,13 @@ bool QueryStatsModel::removeQuery(int row)
     return true;
 }
 
-bool QueryStatsModel::addResult(const QueryTimings &result)
+bool QueryStatsModel::addResult(QueryTimings result)
 {
     int row = rowFor(result.queryName());
     if (row == -1)
         return false;
 
-    m_queries[row].appendResult(result);
+    m_queries[row].appendResult(std::move(result));
     m_runningQueries.removeOne(row);
     emit dataChanged(index(row, 0), index(row, columnCount() - 1));
     return true;

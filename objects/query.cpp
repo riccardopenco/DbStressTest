@@ -62,22 +62,22 @@ int Query::failCount() const
 
 qint64 Query::totalExecTimeMs() const
 {
-    return m_totalExecTimeMs;
+    return m_stats.totExecDurationMs();
 }
 
 qint64 Query::totalFetchTimeMs() const
 {
-    return m_totalFetchTimeMs;
+    return m_stats.totFetchDurationMs();
 }
 
 qint64 Query::averageExecTimeMs() const
 {
-    return m_averageExecTimeMs;
+    return m_stats.avgExecDurationMs();
 }
 
 qint64 Query::averageFetchTimeMs() const
 {
-    return m_averageFetchTimeMs;
+    return m_stats.avgFetchDurationMs();
 }
 
 int Query::rowCount() const
@@ -95,21 +95,18 @@ int Query::weight()
     return m_weight;
 }
 
-void Query::appendResult(const QueryTimings &result)
+void Query::appendResult(QueryTimings result)
 {
-    m_stats.append(result);
     if (result.success())
         ++m_successCount;
     else
         ++m_failCount;
-    m_totalExecTimeMs += result.execDurationMs();
-    m_totalFetchTimeMs += result.fetchDurationMs();
-    m_averageExecTimeMs = m_totalExecTimeMs / m_stats.count();
-    m_averageFetchTimeMs = m_totalFetchTimeMs / m_stats.count();
+
     m_rowCount = result.rowCount();
-//    if (result.affectedRows() != -1)
-        m_affectedRowsCount = result.affectedRows();
-        m_weight += result.weight();
+    m_affectedRowsCount = result.affectedRows();
+    m_weight += result.weight();
+
+    m_stats.appendTiming(std::move(result));
 }
 
 void Query::clearResults()
@@ -117,10 +114,6 @@ void Query::clearResults()
     m_stats.clear();
     m_successCount = 0;
     m_failCount = 0;
-    m_totalExecTimeMs = 0;
-    m_totalFetchTimeMs = 0;
-    m_averageExecTimeMs = 0;
-    m_averageFetchTimeMs = 0;
     m_rowCount = 0;
     m_affectedRowsCount = 0;
     m_weight = 0;

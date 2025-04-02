@@ -44,7 +44,7 @@ public:
     bool appendQuery(const Query &query);
     bool updateQuery(const Query &query);
     bool removeQuery(int row);
-    bool addResult(const QueryTimings &result);
+    bool addResult(QueryTimings result);
 
     Query getToRunAt(int row);
     Query at(int row) const;
