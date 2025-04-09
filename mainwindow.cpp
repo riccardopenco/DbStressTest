@@ -151,6 +151,8 @@ void MainWindow::saveConfiguration()
 
 void MainWindow::setConfiguration(st::Configuration cfg)
 {
+    qDeleteAll(m_workers);
+    m_workers.clear();
     m_cfg = cfg;
     st::DBManager::setDb(m_cfg.db());
     ui->dbName->setText(m_cfg.db().name);
