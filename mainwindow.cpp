@@ -570,6 +570,7 @@ void MainWindow::prepareQueries()
         m_queryModel.appendQuery(Query(query));
 
     ui->tableView->resizeColumnsToContents();
+    ui->buttonCheckAll->setChecked(false);
 }
 
 Query MainWindow::nextQuery()

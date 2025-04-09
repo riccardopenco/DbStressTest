@@ -111,31 +111,31 @@ qint64 QueryStats::stdErrQueryDurationMs() const
 {
     const auto cnt = m_timings.size();
     const auto avg = avgQueryDurationMs();
-    const auto sum = std::accumulate(std::cbegin(m_timings),
-                                     std::cend(m_timings),
-                                     static_cast<qint64>(0),
-                                     [&avg](qint64 sum, const QueryTimings &timing){ const auto delta = timing.totalDurationMs() - avg; return sum + delta * delta; });
-    return std::sqrt(sum / cnt);
+    const auto sum2 = std::accumulate(std::cbegin(m_timings),
+                                      std::cend(m_timings),
+                                      static_cast<qint64>(0),
+                                      [&avg](qint64 sum2, const QueryTimings &timing){ const auto delta = timing.totalDurationMs() - avg; return sum2 + delta * delta; });
+    return std::sqrt(sum2 / cnt);
 }
 
 qint64 QueryStats::stdErrExecDurationMs() const
 {
     const auto cnt = m_timings.size();
     const auto avg = avgExecDurationMs();
-    const auto sum = std::accumulate(std::cbegin(m_timings),
-                                     std::cend(m_timings),
-                                     static_cast<qint64>(0),
-                                     [&avg](qint64 sum, const QueryTimings &timing){ const auto delta = timing.execDurationMs() - avg; return sum + delta * delta; });
-    return std::sqrt(sum / cnt);
+    const auto sum2 = std::accumulate(std::cbegin(m_timings),
+                                      std::cend(m_timings),
+                                      static_cast<qint64>(0),
+                                      [&avg](qint64 sum2, const QueryTimings &timing){ const auto delta = timing.execDurationMs() - avg; return sum2 + delta * delta; });
+    return std::sqrt(sum2 / cnt);
 }
 
 qint64 QueryStats::stdErrFetchDurationMs() const
 {
     const auto cnt = m_timings.size();
     const auto avg = avgFetchDurationMs();
-    const auto sum = std::accumulate(std::cbegin(m_timings),
-                                     std::cend(m_timings),
-                                     static_cast<qint64>(0),
-                                     [&avg](qint64 sum, const QueryTimings &timing){ const auto delta = timing.fetchDurationMs() - avg; return sum + delta * delta; });
-    return std::sqrt(sum / cnt);
+    const auto sum2 = std::accumulate(std::cbegin(m_timings),
+                                      std::cend(m_timings),
+                                      static_cast<qint64>(0),
+                                      [&avg](qint64 sum2, const QueryTimings &timing){ const auto delta = timing.fetchDurationMs() - avg; return sum2 + delta * delta; });
+    return std::sqrt(sum2 / cnt);
 }

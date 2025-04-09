@@ -9,7 +9,7 @@ void CheckableProxyModel::setSourceModel(QAbstractItemModel *model)
 {
     const auto clear = [this](){ m_selectedIndexes.clear(); };
 
-    connect(model, &QAbstractItemModel::dataChanged, this, clear);
+    // connect(model, &QAbstractItemModel::dataChanged, this, clear);
     connect(model, &QAbstractItemModel::rowsInserted, this, clear);
     connect(model, &QAbstractItemModel::columnsInserted, this, clear);
     connect(model, &QAbstractItemModel::rowsRemoved, this, clear);
@@ -71,7 +71,7 @@ QVariant CheckableProxyModel::data(const QModelIndex &index, int role) const
             hide = true;
 
         if (hide)
-            return QVariant();
+            return {};
         else
             return m_selectedIndexes.contains(mapToSource(index)) ? Qt::Checked : Qt::Unchecked;
     }
