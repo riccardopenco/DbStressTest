@@ -21,6 +21,11 @@ const QMap<QString, QueryDef> &Configuration::queries() const
     return m_queries;
 }
 
+void Configuration::removeQuery(const QString &name)
+{
+    m_queries.remove(name);
+}
+
 void Configuration::addQuery(QueryDef newQuery)
 {
     m_queries.insert(newQuery.name(), std::move(newQuery));

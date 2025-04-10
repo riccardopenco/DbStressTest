@@ -17,6 +17,7 @@ public:
     void setDb(const DB &newDb);
 
     const QMap<QString, QueryDef> &queries() const;
+    void removeQuery(const QString &name);
     void addQuery(QueryDef newQuery);
     void setQueries(const QMap<QString, QueryDef> &newQueries);
 

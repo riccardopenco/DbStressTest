@@ -40,6 +40,8 @@ void QueryWorker::process(const QString &name, const QString &sql)
 
         if (!specs.hostname.isEmpty())
             db.setHostName(specs.hostname);
+        if (specs.port > 0)
+            db.setPort(specs.port);
         if (!specs.connectOptions.isEmpty())
             db.setConnectOptions(specs.connectOptions);
         if (!specs.databaseName.isEmpty())
@@ -51,7 +53,13 @@ void QueryWorker::process(const QString &name, const QString &sql)
 
         auto res = db.open();
         if (!res)
+        {
+            emit running();
+            emit failed();
+            emit stopped();
+            emit resultReady(QueryTimings(name, sql));
             return;
+        }
         m_query = new QSqlQuery(db);
         m_query->setForwardOnly(true);
     }
