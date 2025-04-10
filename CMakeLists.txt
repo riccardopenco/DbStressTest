@@ -18,7 +18,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Sql)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Widgets Sql)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets Sql)
+# find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Sql)
 
 set(SOURCES
     main.cpp
@@ -100,9 +102,13 @@ target_compile_options(DbStressTest PUBLIC "$<$<CONFIG:RELEASE>:SHELL:${RELEASE_
 target_link_libraries(DbStressTest
     #PUBLIC
     PRIVATE
-    Qt6::Core
-    Qt6::Gui
-    Qt6::Widgets
-    Qt6::Sql
+    Qt::Core
+    Qt::Gui
+    Qt::Widgets
+    Qt::Sql
+    # Qt6::Core
+    # Qt6::Gui
+    # Qt6::Widgets
+    # Qt6::Sql
     QXlsx::QXlsx
 )

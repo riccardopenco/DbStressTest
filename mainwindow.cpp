@@ -37,7 +37,7 @@ void MainWindow::setupForm()
     ui->workerCount->setValue(m_workerCount);
     clearStatistics();
 
-    qRegisterMetaType<QueryTimings>("QueryStats");
+    qRegisterMetaType<QueryTimings>("QueryTimings");
 
     m_queryProxyModel.setSourceModel(&m_queryModel);
     m_queryProxyModel.setCheckableColumns({checkableColumn});
@@ -80,6 +80,7 @@ void MainWindow::setupForm()
     connect(ui->buttonAddQuery, &QPushButton::clicked, this, &MainWindow::addQuery);
     connect(ui->buttonEditQuery, &QPushButton::clicked, this, &MainWindow::editQuery);
     connect(ui->buttonRemoveQuery, &QPushButton::clicked, this, &MainWindow::removeQuery);
+    connect(ui->tableView, &QTableView::doubleClicked, this, &MainWindow::editQuery);
 
     connect(&m_timer, &QTimer::timeout, this, [this]() { m_endTime = QDateTime::currentDateTime(); updateDuration(); });
 
@@ -245,6 +246,7 @@ void MainWindow::addQuery()
         return;
 
     m_queryModel.appendQuery(Query(q));
+    m_cfg.addQuery(std::move(q));
     ui->tableView->resizeColumnsToContents();
 }
 
@@ -263,6 +265,7 @@ void MainWindow::editQuery()
         return;
 
     m_queryModel.updateQuery(Query(q));
+    m_cfg.addQuery(std::move(q));
     ui->tableView->resizeColumnsToContents();
 }
 
@@ -272,7 +275,9 @@ void MainWindow::removeQuery()
     if (!idx.isValid())
         return;
 
-    m_queryModel.removeQuery(idx.row());
+    const auto name = m_queryProxyModel.index(idx.row(), static_cast<int>(QueryStatsModel::ModelColumn::Name)).data().toString();
+    m_cfg.removeQuery(name);
+    m_queryModel.removeQuery(m_queryProxyModel.mapToSource(idx).row());
 }
 
 void MainWindow::workedStarted()

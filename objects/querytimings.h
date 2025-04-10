@@ -8,6 +8,9 @@
 class QueryTimings
 {
 public:
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    QueryTimings() = default;
+#endif
     explicit QueryTimings(const QString &name, const QString &sql);
     ~QueryTimings();
 

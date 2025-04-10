@@ -105,12 +105,21 @@ void XlsxHelper::dumpQueryToXlsx(QXlsx::Document &xlsx, QSqlQuery &query, bool i
         for (int c = 0; c < columns; ++c)
         {
             QVariant value = query.value(c);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             if (value.typeId() == QMetaType::QDate)
                 format = dateFormat;
             else if (value.typeId() == QMetaType::QDateTime)
                 format = dateTimeFormat;
             else
                 format = defaultFormat;
+#else
+            if (value.type() == QMetaType::QDate)
+                format = dateFormat;
+            else if (value.type() == QMetaType::QDateTime)
+                format = dateTimeFormat;
+            else
+                format = defaultFormat;
+#endif
 
             xlsx.write(r + 1, c + 1, value, format);
         }
@@ -183,13 +192,21 @@ void XlsxHelper::dumpModelToXlsx(QXlsx::Document &xlsx, const QAbstractItemModel
         for (int c = 0; c < columns; ++c)
         {
             QVariant value = model.data(model.index(r, c), Qt::DisplayRole);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             if (value.typeId() == QMetaType::QDate)
                 format = dateFormat;
             else if (value.typeId() == QMetaType::QDateTime)
                 format = dateTimeFormat;
             else
                 format = defaultFormat;
-
+#else
+            if (value.type() == QMetaType::QDate)
+                format = dateFormat;
+            else if (value.type() == QMetaType::QDateTime)
+                format = dateTimeFormat;
+            else
+                format = defaultFormat;
+#endif
             xlsx.write(rn + 1, c + 1, value, format);
         }
 
@@ -238,13 +255,21 @@ void XlsxHelper::dumpModelToXlsxWithForegroundRole(QXlsx::Document &xlsx, const 
             QVariant value = model.data(model.index(r, c), Qt::DisplayRole);
             QVariant foreground = model.data(model.index(r, c), Qt::ForegroundRole);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             if (value.typeId() == QMetaType::QDate)
                 format = dateFormat;
             else if (value.typeId() == QMetaType::QDateTime)
                 format = dateTimeFormat;
             else
                 format = defaultFormat;
-
+#else
+            if (value.type() == QMetaType::QDate)
+                format = dateFormat;
+            else if (value.type() == QMetaType::QDateTime)
+                format = dateTimeFormat;
+            else
+                format = defaultFormat;
+#endif
             QColor color = foreground.value<QColor>();
             format.setFontColor(color);
 
